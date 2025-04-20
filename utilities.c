@@ -184,14 +184,13 @@ int  dequeue(MemQueue *q) {
     return top;
 }
 
-// void printQueue(MemQueue *q, int qid) {
-//     printf("  [Q%d] size=%2d |", qid, q->size);
-//     for (int j = 0; j < q->size; ++j) {
-//         struct MemoryWord *mw = q->items[j].ptr;
-//         printf(" (%s,pr=%d,seq=%" PRIu64 ")",
-//                mw.value ,
-//                q->items[j].priority,
-//                q->items[j].seqno);
-//     }
-//     printf("\n");
-// }
+void printQueue(MemQueue *q, int qid) {
+    printf("  [Q%d] size=%2d |", qid, q->size);
+    for (int j = 0; j < q->size; ++j) {
+        PQNode *mw = q->items + j;
+        printf(" (ptr=%d,seq=%d, seqno=%d" PRIu64 ")", mw->ptr,
+               q->items[j].priority,
+               q->items[j].seqno);
+    }
+    printf("\n");
+}

@@ -264,7 +264,7 @@ void assign(int program, const char *varName, const char *value)
             break;
         }
     }
-    printf("Variable Storage is full");
+//    printf("Variable Storage is full");
 }
 
 void writeFile(int program, const char *var1, const char *var2)
@@ -411,6 +411,38 @@ void printFromTo(int program, const char *var1, const char *var2)
     printf("\n");
 }
 
+
+
+Resources getResourceType(int program){
+    int startIndex = programStartIndex[program];
+    int programCounterIndex = startIndex + 3;
+    int instructionIndex = atoi(memory[programCounterIndex].value);
+    char instruction[MAX_STRING_LENGTH];
+    strncpy(instruction, memory[instructionIndex].value, MAX_STRING_LENGTH - 1);
+    instruction[MAX_STRING_LENGTH - 1] = '\0'; // Ensure null-termination
+    if (instruction[strlen(instruction) - 1] == '\n')
+        instruction[strlen(instruction) - 1] = '\0'; // Remove newline character
+    int instructionCount = 0;
+    char **splittedInstruction = split_string(instruction, &instructionCount);
+
+
+    if (strcmp(splittedInstruction[0], "semWait") == 0 || strcmp(splittedInstruction[0], "semSignal") == 0 ){
+        Resources tmp = (Resources) NULL; 
+        if (strcmp(splittedInstruction[1], "userInput") == 0)
+            tmp = USER_INPUT;
+        else if (strcmp(splittedInstruction[1], "userOutput") == 0)
+            tmp = USER_OUTPUT;
+        else if (strcmp(splittedInstruction[1], "file") == 0)
+            tmp = FILE_ACCESS;
+        else {
+            perror("invalid resource allocation request");
+            exit(EXIT_FAILURE);
+        }
+        return tmp;
+    }
+    return (Resources)NULL;
+}
+
 bool executeInstruction(int program)
 {
     int startIndex = programStartIndex[program];
@@ -493,6 +525,9 @@ bool executeInstruction(int program)
             printf("%s, ", splittedInstruction[i]);
         }
         printf("\n");
+
+        Resources tmp = getResourceType(program);
+        Resources_availability[tmp] = false;
     }
     else if (strcmp(splittedInstruction[0], "semSignal") == 0)
     {
@@ -502,6 +537,21 @@ bool executeInstruction(int program)
             printf("%s, ", splittedInstruction[i]);
         }
         printf("\n");
+        Resources tmp = getResourceType(program);
+        Resources_availability[tmp] = true;
+        printf("resource we are unblocking: %d\n", tmp);
+        
+        if (algo != MLFQ){
+            while(peek(BlockingQueues[tmp]) != -1){
+                int tmp2 =  dequeue(BlockingQueues[tmp]);
+                enqueue(readyQueue, tmp2,atoi( memory[programStartIndex[tmp2]+2].value ));
+            }
+        }else {
+            while( peek(BlockingQueues[tmp]) != -1){
+                int tmp2 =  dequeue(BlockingQueues[tmp]);
+                enqueue(MLFQ_queues[atoi( memory[programStartIndex[tmp2]+2].value )], tmp2, atoi( memory[programStartIndex[tmp2]+2].value ));
+            }
+        }
     }
     else
     {
@@ -519,8 +569,8 @@ bool executeInstruction(int program)
 }
 
 
-bool can_execute_instruction(int program){
 
+bool can_execute_instruction(int program){
     int startIndex = programStartIndex[program];
     int programCounterIndex = startIndex + 3;
     int instructionIndex = atoi(memory[programCounterIndex].value);
@@ -532,23 +582,28 @@ bool can_execute_instruction(int program){
     int instructionCount = 0;
     char **splittedInstruction = split_string(instruction, &instructionCount);
 
-
-    if (strcmp(splittedInstruction[0], "semWait") == 0 ){
-        Resources tmp; 
-        if (strcmp(splittedInstruction[1], "userInput") == 0)
-            tmp = USER_INPUT;
-        else if (strcmp(splittedInstruction[1], "userOutput") == 0)
-            tmp = USER_OUTPUT;
-        else if (strcmp(splittedInstruction[1], "file") == 0)
-            tmp = FILE_ACCESS;
-        else {
-            perror("invalid resource allocation request");
-            exit(EXIT_FAILURE);
-        }
-        return Resources_availability[tmp];            
+    if (strcmp(splittedInstruction[0], "semSignal") == 0 ){
+        return true;
     }
-    return true;    
+
+    Resources tmp = getResourceType(program);
+    if (tmp == NULL){
+        return true;
+    }else
+        return Resources_availability[tmp];            
+
 }
+
+
+MemQueue*  get_blocking_queue(int program){
+
+    Resources tmp = getResourceType(program);
+    return BlockingQueues[tmp];            
+    
+    //return NULL;          /* <<< and add a safe default here      */
+}
+
+
 
 void FCFS_algo(struct program programList[] , int num_of_programs){
     int clockcycles = 0;
@@ -580,18 +635,26 @@ void RR_algo(struct program programList[] , int num_of_programs, int Quanta ){
     // check arrivals first then move just executed process to back of queue
     int current_quanta = 0;
     int completed = 0;
-    struct MemoryWord* current_process = NULL;    
+    int current_process = -1;    
 
     while(completed < num_of_programs){
         for (int i = 0; i < num_of_programs; i++){
             // checking if a program should be added into memory
             if ( programList[i].arrivalTime != -1 && clockcycles == programList[i].arrivalTime){
-               add_program_to_memory(programList, i, readyQueue);
+                enqueue(readyQueue,atoi( memory[programStartIndex[i]].value), atoi( memory[programStartIndex[i]+2].value ));
+                programList[i].arrivalTime = -1;
             }
+        }
+        printf("Ready Queue: ");
+        printQueue(readyQueue, -1);
 
+        // Print out the blocking queues
+        for (int r = 0; r < NUM_RESOURCES; r++) {
+            printf("Blocking Queue for Resource %d: ", r);
+            printQueue(BlockingQueues[r], r);
         }
         //execute the process that has its turn
-        if (peek(readyQueue) != NULL){
+        if (peek(readyQueue) != -1){
 
             // finding the next process to execute
             if (current_quanta == 0){
@@ -600,16 +663,17 @@ void RR_algo(struct program programList[] , int num_of_programs, int Quanta ){
             // continuing the execution of the current process
             // check if we can execute instruction and if so then we execute
             //dumpMemory(Memory_start_location);
-            int pc =  atoi(peek(readyQueue)[3].arg1)+8;
+            //int pc =  atoi(peek(readyQueue)[3].arg1)+8;
            // printf("trying    => Clock %2d: Running prog %d, PC=%d, instr='%s'\n",clockcycles, atoi(peek(readyQueue)[0].arg1) ,pc,peek(readyQueue)[pc].identifier );
-                
+           int pc =  atoi(memory[programStartIndex[current_process]+3].value);
+            printf("trying    => Clock %2d: Running prog %d, PC=%d, instr='%s'\n",clockcycles, current_process ,pc,memory[pc].value );
+            // Print out the ready queue
+            
             if (can_execute_instruction(current_process)){
-                int pc =  atoi(peek(readyQueue)[3].arg1)+8;
-                printf("executing => Clock %2d: Running prog %d, PC=%d, instr='%s'\n",clockcycles, atoi(peek(readyQueue)[0].arg1) ,pc,peek(readyQueue)[pc].identifier );
-                //printQueue();
-                // checking if last instruction and resetting the quanta
+                int pc =  atoi(memory[programStartIndex[current_process]+3].value);
+                printf("executing => Clock %2d: Running prog %d, PC=%d, instr='%s'\n",clockcycles, current_process ,pc,memory[pc].value );
                 // executing the instruction, will ready the corresponding blocked processes in case of semSignal  
-                if (execute_an_instruction(current_process)){
+                if (executeInstruction(current_process)){
                     dequeue(readyQueue);
                     current_quanta = 0;
                     completed++;
@@ -617,8 +681,8 @@ void RR_algo(struct program programList[] , int num_of_programs, int Quanta ){
                 else {
                     current_quanta++;
                     if (current_quanta == Quanta){
-                        struct MemoryWord *tmp=  dequeue(readyQueue);
-                        enqueue(readyQueue, tmp,atoi(tmp[2].arg1));
+                         int tmp=  dequeue(readyQueue);
+                        enqueue(readyQueue,tmp, atoi(memory[programStartIndex[tmp]+2].value ));
                         current_quanta = 0;
                     }
                 }
@@ -626,8 +690,8 @@ void RR_algo(struct program programList[] , int num_of_programs, int Quanta ){
             }
             // if we cant execute an instruction it must be due to resource blocking so we must place in the appropriate blocked queue
             else{
-                struct MemoryWord *tmp=  dequeue(readyQueue);
-                enqueue(get_blocking_queue(current_process), tmp,atoi(tmp[2].arg1) );
+                int tmp=  dequeue(readyQueue);
+                enqueue(get_blocking_queue(current_process), tmp,atoi(memory[programStartIndex[tmp]+2].value ));
                 current_quanta = 0;
 
             }                
@@ -657,12 +721,10 @@ void RR_algo(struct program programList[] , int num_of_programs, int Quanta ){
 //         curr_level[p]   = -1;
 //         rem_quantum[p]  = 0;
 //     }
-
 //     int completed = 0;
 //     int clock = 0;
 //     struct MemoryWord *running = NULL;
 //     int run_pid = -1;
-
 //     while (completed < number_of_programs) {
 //         // —— first: unblock any processes just signaled ——
 //         for (int r = 0; r < NUM_RESOURCES; ++r) {
@@ -760,7 +822,7 @@ void scheduler(struct program programList[] , int num_of_Programs){
     }
     
     //setting the scheduling algorithm
-    algo = FCFS; 
+    algo = RR; 
     int quanta = 2; 
 
     PopulateMemory(programList, num_of_Programs);
@@ -770,7 +832,7 @@ void scheduler(struct program programList[] , int num_of_Programs){
         FCFS_algo(programList, num_of_Programs);
         break;
     case RR:
-        //RR_algo(programList, num_of_Programs,quanta );
+        RR_algo(programList, num_of_Programs,quanta );
         break;
     case MLFQ:
         //MLFQ_algo(programList, num_of_Programs);
@@ -786,8 +848,8 @@ int main()
     int num_of_programs = count_txt_files("./Programs");
     struct program programList[3] = {
         {"Program_1.txt" , 0, 0 },
-        {"Program_2.txt" , 0, 2 },
-        {"Program_3.txt" , 0, 4 }
+        {"Program_2.txt" , 0, 0 },
+        {"Program_3.txt" , 0, 0 }
     };  
     scheduler(programList, num_of_programs);
     return 0;
