@@ -1,6 +1,6 @@
 semWait userInput
-assign a input
-assign b input
+assign a daniel
+assign b nour
 semSignal userInput
 semWait file
 writeFile a b
