@@ -1,1 +1,0 @@
-teInstruction(2, 42);

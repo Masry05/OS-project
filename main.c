@@ -1,10 +1,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <windows.h>
 #include <stdbool.h>
+#include <dirent.h>   // For directory operations
+#include <sys/stat.h> // For file status
+#include <limits.h>   // For PATH_MAX
+#include <unistd.h>   // For additional POSIX functionality
 
 #define MAX_STRING_LENGTH 100
+
+// Add DT_REG definition if not defined
+#ifndef DT_REG
+#define DT_REG 8
+#endif
 
 typedef struct
 {
@@ -18,28 +26,36 @@ int *programStartIndex = NULL;
 
 int count_txt_files(const char *directory_path)
 {
-    WIN32_FIND_DATAA find_data;
-    char search_path[MAX_PATH];
+    DIR *dir;
+    struct dirent *entry;
     int count = 0;
 
-    snprintf(search_path, sizeof(search_path), "%s\\*.txt", directory_path);
-
-    HANDLE hFind = FindFirstFileA(search_path, &find_data);
-    if (hFind == INVALID_HANDLE_VALUE)
+    dir = opendir(directory_path);
+    if (dir == NULL)
     {
         fprintf(stderr, "Failed to open directory: %s\n", directory_path);
         return -1;
     }
 
-    do
+    while ((entry = readdir(dir)) != NULL)
     {
-        if (!(find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
-        {
-            count++;
-        }
-    } while (FindNextFileA(hFind, &find_data) != 0);
+        // Use stat to check if it's a regular file instead of d_type
+        char full_path[MAX_STRING_LENGTH];
+        struct stat st;
 
-    FindClose(hFind);
+        snprintf(full_path, MAX_STRING_LENGTH, "%s/%s", directory_path, entry->d_name);
+
+        if (stat(full_path, &st) == 0 && S_ISREG(st.st_mode))
+        {
+            const char *ext = strrchr(entry->d_name, '.');
+            if (ext && strcmp(ext, ".txt") == 0)
+            {
+                count++;
+            }
+        }
+    }
+
+    closedir(dir);
     return count;
 }
 
@@ -115,8 +131,8 @@ void PopulateMemory()
         strcpy(memory[programStartIndex[i] + 7].value, "");
         strcpy(memory[programStartIndex[i] + 7].value2, "");
 
-        char filename[MAX_PATH];
-        snprintf(filename, MAX_PATH, "./Programs/Program_%d.txt", (i + 1));
+        char filename[MAX_STRING_LENGTH];
+        snprintf(filename, MAX_STRING_LENGTH, "./Programs/Program_%d.txt", (i + 1));
         currentStartIndex = fillInstructions(filename, (programStartIndex[i] + 8));
         snprintf(memory[programStartIndex[i] + 4].value2, MAX_STRING_LENGTH, "%d", currentStartIndex - 1);
         if (currentStartIndex == -1)
@@ -380,13 +396,13 @@ void printFromTo(int program, const char *var1, const char *var2)
     printf("\n");
 }
 
-void executeInstruction(int program, int temp)
+void executeInstruction(int program)
 {
     int startIndex = programStartIndex[program];
     int programCounterIndex = startIndex + 3;
     int instructionIndex = atoi(memory[programCounterIndex].value);
     char instruction[MAX_STRING_LENGTH];
-    strncpy(instruction, memory[temp].value, MAX_STRING_LENGTH - 1);
+    strncpy(instruction, memory[instructionIndex].value, MAX_STRING_LENGTH - 1);
     instruction[MAX_STRING_LENGTH - 1] = '\0'; // Ensure null-termination
     if (instruction[strlen(instruction) - 1] == '\n')
         instruction[strlen(instruction) - 1] = '\0'; // Remove newline character
@@ -484,9 +500,5 @@ int main()
 {
     PopulateMemory();
     PrintMemory();
-    executeInstruction(2, 39);
-    executeInstruction(2, 42);
-    PrintMemory();
-    executeInstruction(2, 45);
     return 0;
 }
