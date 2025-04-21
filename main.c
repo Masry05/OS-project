@@ -30,6 +30,10 @@ MemQueue *BlockingQueues[NUM_RESOURCES];
 MemQueue MLFQ_queues_not_ptrs[4];
 MemQueue *MLFQ_queues[4];
 
+#define MAX_PROGRAMS 3
+int curr_level[MAX_PROGRAMS];
+int rem_quantum[MAX_PROGRAMS];
+
 // initializing the array to have 3 resources, and so that with the enum i can point to the corresponding resource in a readable format
 bool Resources_availability[NUM_RESOURCES] = {true, true, true};
 
@@ -664,15 +668,15 @@ void RR_algo(struct program programList[], int num_of_programs, int Quanta)
                 programList[i].arrivalTime = -1;
             }
         }
-        printf("Ready Queue: ");
-        printQueue(readyQueue, -1);
+        // printf("Ready Queue: ");
+        // printQueue(readyQueue, -1);
 
-        // Print out the blocking queues
-        for (int r = 0; r < NUM_RESOURCES; r++)
-        {
-            printf("Blocking Queue for Resource %d: ", r);
-            printQueue(BlockingQueues[r], r);
-        }
+        // // Print out the blocking queues
+        // for (int r = 0; r < NUM_RESOURCES; r++)
+        // {
+        //     printf("Blocking Queue for Resource %d: ", r);
+        //     printQueue(BlockingQueues[r], r);
+        // }
         // execute the process that has its turn
         if (peek(readyQueue) != -1)
         {
@@ -729,109 +733,123 @@ void RR_algo(struct program programList[], int num_of_programs, int Quanta)
     }
 }
 
-// void MLFQ_algo(struct program programList[], int number_of_programs) {
-//     const int num_levels = 4;
-//     // initialize the 4 ready–queues
-//     for (int lvl = 0; lvl < num_levels; ++lvl) {
-//         initQueue(&MLFQ_queues_not_ptrs[lvl]);
-//         MLFQ_queues[lvl] = &MLFQ_queues_not_ptrs[lvl];
-//     }
-//     // timeslice for each level = 2^(lvl+1): Q0=2, Q1=4, Q2=8, Q3=16
-//     int quantum_per_level[num_levels];
-//     for (int lvl = 0; lvl < num_levels; ++lvl){
-//         quantum_per_level[lvl] = 1 << lvl;
-//     }
-//     printf("\n");
-//     // per‐program MLFQ state
-//     for (int p = 0; p < number_of_programs; ++p) {
-//         curr_level[p]   = -1;
-//         rem_quantum[p]  = 0;
-//     }
-//     int completed = 0;
-//     int clock = 0;
-//     struct MemoryWord *running = NULL;
-//     int run_pid = -1;
-//     while (completed < number_of_programs) {
-//         // —— first: unblock any processes just signaled ——
-//         for (int r = 0; r < NUM_RESOURCES; ++r) {
-//             while (Resources_availability[r] && !isEmpty(BlockingQueues[r])) {
-//                 struct MemoryWord *mw = dequeue(BlockingQueues[r]);
-//                 int pid = atoi(mw->arg1);
-//                 int lvl = curr_level[pid];
-//                 enqueue(MLFQ_queues[lvl], mw, 0);
-//                 printf("[C=%3d] UNBLOCK → pid=%d back to Q%d\n", clock, pid, lvl);
-//             }
-//         }
-//         // —— arrivals ——
-//         for (int p = 0; p < number_of_programs; ++p) {
-//             if (programList[p].arrivalTime == clock) {
-//                 add_program_to_memory(programList, p, MLFQ_queues[0]);
-//                 curr_level[p]  = 0;
-//                 rem_quantum[p] = quantum_per_level[0];
-//                 //printf("[C=%3d] ARRIVE → pid=%d in Q0\n", clock, p);
-//             }
-//         }
-//         // —— preempt if a higher‐priority queue is non‐empty ——
-//         int highest_ready = -1;
-//         for (int lvl = 0; lvl < num_levels; ++lvl) {
-//             if (!isEmpty(MLFQ_queues[lvl])) { highest_ready = lvl; break; }
-//         }
-//         if (running && highest_ready != -1 && highest_ready < curr_level[run_pid]) {
-//             // preempt current
-//            // printf("[C=%3d] PREEMPT → pid=%d lvl=%d rem_q=%d\n",clock, run_pid, curr_level[run_pid], rem_quantum[run_pid]);
-//             enqueue(MLFQ_queues[curr_level[run_pid]], running, 0);
-//             running = NULL;
-//         }
-//         // —— dispatch if CPU is free ——
-//         if (!running) {
-//             int sel_lvl = -1;
-//             for (int lvl = 0; lvl < num_levels; ++lvl) {
-//                 if (!isEmpty(MLFQ_queues[lvl])) { sel_lvl = lvl; break; }
-//             }
-//             if (sel_lvl != -1) {
-//                 running = dequeue(MLFQ_queues[sel_lvl]);
-//                 run_pid = atoi(running->arg1);
-//                 // ensure rem_quantum is set (for freshly arrived or demoted)
-//                 if (rem_quantum[run_pid] == 0)
-//                     rem_quantum[run_pid] = quantum_per_level[sel_lvl];
-//                 curr_level[run_pid] = sel_lvl;
-//                 //printf("[C=%3d] DISPATCH → pid=%d from Q%d rem_q=%d\n",clock, run_pid, sel_lvl, rem_quantum[run_pid]);
-//             }
-//         }
-//         //print all queues
+void MLFQ_algo(struct program programList[], int number_of_programs) {
+    const int num_levels = 4;
+    // initialize the 4 ready–queues
+    for (int lvl = 0; lvl < num_levels; ++lvl) {
+        initQueue(&MLFQ_queues_not_ptrs[lvl]);
+        MLFQ_queues[lvl] = &MLFQ_queues_not_ptrs[lvl];
+    }
+    // timeslice for each level = 2^(lvl+1): Q0=2, Q1=4, Q2=8, Q3=16
+    int quantum_per_level[num_levels];
+    for (int lvl = 0; lvl < num_levels; ++lvl){
+        quantum_per_level[lvl] = 1 << lvl;
+    }
+    printf("\n");
+    // per‐program MLFQ state
+    for (int p = 0; p < number_of_programs; ++p) {
+        curr_level[p]   = -1;
+        rem_quantum[p]  = 0;
+    }
+    int completed = 0;
+    int clock = 0;
+    int running = -1;
+    while (completed < number_of_programs) {
+        // —— first: unblock any processes just signaled ——
+        // for (int r = 0; r < NUM_RESOURCES; ++r) {
+        //     while (Resources_availability[r] && !isEmpty(BlockingQueues[r])) {
+        //         int pid = dequeue(BlockingQueues[r]);
+        //         int lvl = curr_level[pid];
+        //         enqueue(MLFQ_queues[lvl], pid, 0);
+        //         printf("[C=%3d] UNBLOCK → pid=%d back to Q%d\n", clock, pid, lvl);
+        //     }
+        // }
+        // —— arrivals ——
 
-//         // —— execute one time unit ——
-//         if (running) {
-//             int lvl = curr_level[run_pid];
-//             int pc  = atoi(running[3].arg1);
-//             char *instr = running[8 + pc].identifier;
-//             //printf("[C=%3d] RUN      pid=%d lvl=%d pc=%d instr=\"%s\" rem_q=%d\n", clock, run_pid, lvl, pc, instr, rem_quantum[run_pid]);
-//             bool finished = execute_an_instruction(running);
-//             if (finished) {
-//                 completed++;
-//                 //printf("FINISHED → pid=%d (done=%d)\n", run_pid, ++completed);
-//                 running = NULL;
-//             } else {
-//                 rem_quantum[run_pid]--;
-//                 if (rem_quantum[run_pid] == 0) {
-//                     int old_lvl = lvl;
-//                     if (curr_level[run_pid] < num_levels - 1)
-//                         curr_level[run_pid]++;
-//                     rem_quantum[run_pid] = quantum_per_level[curr_level[run_pid]];
-//                     //printf("           TIMESLICE→ pid=%d demote→Q%d rem_q=%d\n",run_pid, curr_level[run_pid], rem_quantum[run_pid]);
-//                     enqueue(MLFQ_queues[curr_level[run_pid]], running, 0);
-//                     running = NULL;
-//                 }
-//             }
-//         }
-//         clock++;
-//         // for (int lvl = 0; lvl < num_levels; ++lvl) {
-//         //     printf("Q%d: ", lvl);
-//         //     printQueue(MLFQ_queues[lvl], lvl);
-//         // }
-//     }
-//     printf("[DONE] All %d progs done at clock %d\n", number_of_programs, clock);
-// }
+        
+
+        for (int p = 0; p < number_of_programs; ++p) {
+            if (programList[p].arrivalTime == clock) {
+                enqueue( MLFQ_queues[0], atoi(memory[programStartIndex[p]].value), atoi(memory[programStartIndex[p] + 2].value));
+                programList[p].arrivalTime = -1;
+                curr_level[p]  = 0;
+                rem_quantum[p] = quantum_per_level[0];
+                printf("[C=%3d] ARRIVE → pid=%d in Q0\n", clock, p);
+            }
+        }
+        // —— preempt if a higher‐priority queue is non‐empty ——
+        int highest_ready = -1;
+        for (int lvl = 0; lvl < num_levels; ++lvl) {
+            if (!isEmpty(MLFQ_queues[lvl])) { 
+                running = peek(MLFQ_queues[lvl]);
+                 break; }
+        }
+        
+        // —— dispatch if CPU is free ——
+        if (running == -1) {
+            int sel_lvl = -1;
+            for (int lvl = 0; lvl < num_levels; ++lvl) {
+                if (!isEmpty(MLFQ_queues[lvl])) { 
+                    sel_lvl = lvl;
+                     break; }
+            }
+            if (sel_lvl != -1) {
+                running = peek(MLFQ_queues[sel_lvl]);
+                //running = atoi(running->arg1);
+                // ensure rem_quantum is set (for freshly arrived or demoted)
+                if (rem_quantum[running] == 0)
+                    rem_quantum[running] = quantum_per_level[sel_lvl];
+                curr_level[running] = sel_lvl;
+                printf("[C=%3d] DISPATCH → pid=%d from Q%d rem_q=%d\n",clock, running, sel_lvl, rem_quantum[running]);
+            }
+        }
+        //print all queues
+
+        // —— execute one time unit ——
+        if (running != -1) {
+            int lvl = curr_level[running];
+            int pc = atoi(memory[programStartIndex[running] + 3].value);
+            printf("trying    => Clock %2d: Running prog %d, PC=%d, instr='%s'\n", clock, running, pc, memory[pc].value);
+            if (can_execute_instruction(running)){
+                if ( executeInstruction(running)) {
+                    dequeue(MLFQ_queues[lvl]);
+                    printf("FINISHED → pid=%d (done=%d)\n", running, ++completed);
+                    running = -1;
+                } else {
+                    rem_quantum[running]--;
+                    if (rem_quantum[running] == 0) {
+                        if (curr_level[running] < num_levels - 1)
+                            curr_level[running]++;
+                        rem_quantum[running] = quantum_per_level[curr_level[running]];
+                        printf("TIMESLICE→ pid=%d demote→Q%d rem_q=%d\n",running, curr_level[running], rem_quantum[running]);
+                        running = dequeue(MLFQ_queues[lvl]);
+                        enqueue(MLFQ_queues[curr_level[running]], running, 0);
+                        running = -1;
+                    }
+                }
+                clock++;
+            }else{
+                // enqueue the process in the appropriate blocking queue
+                int tmp = dequeue(MLFQ_queues[lvl]);
+                enqueue(get_blocking_queue(running), tmp, atoi(memory[programStartIndex[tmp] + 2].value));
+                printf("BLOCKED  → pid=%d in Q%d\n", running, lvl);
+                running = -1;
+            } 
+        }
+        //clock++;
+        // Print out the blocking queues
+        for (int r = 0; r < NUM_RESOURCES; ++r) {
+            printf("Blocking Queue for Resource %d: ", r);
+            printQueue(BlockingQueues[r], r);
+        }
+        // Print out the ready queue      
+        for (int lvl = 0; lvl < num_levels; ++lvl) {
+            printf("Q%d: ", lvl);
+            printQueue(MLFQ_queues[lvl], lvl);
+        }
+    }
+    printf("[DONE] All %d progs done at clock %d\n", number_of_programs, clock);
+}
 
 void scheduler(struct program programList[], int num_of_Programs)
 {
@@ -848,7 +866,7 @@ void scheduler(struct program programList[], int num_of_Programs)
     }
 
     // setting the scheduling algorithm
-    algo = RR;
+    algo = MLFQ;
     int quanta = 2;
 
     PopulateMemory(programList, num_of_Programs);
@@ -861,7 +879,7 @@ void scheduler(struct program programList[], int num_of_Programs)
         RR_algo(programList, num_of_Programs, quanta);
         break;
     case MLFQ:
-        // MLFQ_algo(programList, num_of_Programs);
+        MLFQ_algo(programList, num_of_Programs);
         break;
     }
 }
