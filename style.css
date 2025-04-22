@@ -1,0 +1,108 @@
+/* style.css */
+
+/* ---------- Main Window ---------- */
+window {
+  background-color: #F5F5F5; 
+  color: #333333;           
+}
+
+/* ---------- Frames (Panels) ---------- */
+frame {
+  background-color: #FFFFFF;
+  border: 1px solid #E0E0E0;  
+  border-radius: 8px;
+  padding: 12px;
+  margin: 12px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);  
+}
+
+/* ---------- Buttons ---------- */
+button {
+  background-color: #FFFFFF;
+  color: #333333;
+  border: 1px solid #E0E0E0;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-weight: 600;           
+  transition: all 0.2s ease;  /* Smooth hover effects */
+}
+
+button:hover {
+  background-color: #F0F0F0;
+  border-color: #CCCCCC;
+}
+
+button:active {
+  background-color: #E0E0E0;
+}
+
+/* ---------- Entry Fields ---------- */
+entry {
+  background-color: #FFFFFF;
+  color: #333333;
+  border: 1px solid #E0E0E0;
+  border-radius: 4px;
+  padding: 8px 12px;
+  min-width: 200px;
+}
+
+entry:focus {
+  border-color: #666666;
+  box-shadow: 0 0 0 1px #666666;
+}
+
+/* ---------- TreeViews ---------- */
+treeview {
+  background-color: white;
+  border: 1px solid #D0D0D0;
+  font-family: sans-serif;
+}
+
+/* Grid lines */
+treeview.view {
+  -GtkTreeView-grid-line-width: 1;
+  -GtkTreeView-grid-line-pattern: "\1"; 
+  -GtkTreeView-grid-line-color: #E0E0E0;
+}
+
+/* Header row */
+treeview.view header {
+  background-color: #F5F5F5;
+  border-bottom: 2px solid #D0D0D0;
+}
+
+/* Column headers - remove button appearance */
+treeview.view header button {
+  padding: 6px 12px;
+  border-right: 1px solid #D0D0D0;
+  background: none;
+  box-shadow: none;
+  border-image: none;
+  border-radius: 0;
+}
+
+/* Regular cells - remove button appearance */
+treeview.view cell {
+  background: none;
+  border-image: none;
+  box-shadow: none;
+  padding: 4px 8px;
+}
+
+/* Selected row - subtle darker gray */
+treeview.view:selected,
+treeview.view:selected:focus {
+  background-color: #E8E8E8; 
+  color: #000000;           
+}
+
+/* Hover effect - lighter than selection */
+treeview.view row:hover {
+  background-color: #F0F0F0;
+}
+
+/* Optional: Remove selection border */
+treeview.view:selected {
+  box-shadow: none;
+  outline: none;
+}
