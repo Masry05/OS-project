@@ -1,6 +1,11 @@
 #include <gtk/gtk.h>
+#include <glib/gi18n.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 //Global Variables
+GtkApplication *application=NULL;
+
 GtkListStore *process_list_store;
 GtkListStore *ready_queue_store;
 GtkListStore *blocked_queue_store;
@@ -9,16 +14,201 @@ GtkListStore *mutex_status_store;
 GtkListStore *memory_viewer_store;
 GtkListStore *log_store;
 GtkListStore *process_instructions_store;
-GtkTreeIter current_iter_instruction_log; // For marking the current instruction in the log
+GtkTreeIter current_iter_instruction_log;
 
 GtkWidget *quantum_input; 
 GtkWidget *quantum_button_box;  // Container for quantum_input + button
+GtkWidget *dropdown;  // Global dropdown widget
 
 int total_processes=0;
 int curr_clock_cycle=0;
 char *current_scheduler = NULL; // Global variable to store the current scheduler type
 int quantum_level = 0;
 double arrival_time = 0.0; // Global variable to store arrival time
+
+GtkWidget *main_window; // Global variable for the main window
+GtkWidget *popup_window;
+
+
+/*typedef struct {
+    // === Core Window/Container ===
+    GtkWidget *window;
+    GtkWidget *main_box;
+
+    // === Scheduler Configuration ===
+    char *scheduler_type;           // "FCFS", "RR", "MLFQ"
+    int quantum_level;              // For RR/MLFQ
+    double arrival_time;            // For process scheduling
+    int total_processes;            // Track process count
+    int curr_clock_cycle;           // Simulation clock
+
+    // === GTK Data Stores ===
+    GtkListStore *process_list_store;       // All processes
+    GtkListStore *ready_queue_store;        // Ready queue
+    GtkListStore *blocked_queue_store;      // Blocked processes
+    GtkListStore *running_process_store;    // Currently running process
+    GtkListStore *mutex_status_store;       // Mutex/lock status
+    GtkListStore *memory_viewer_store;      // Memory allocation
+    GtkListStore *log_store;                // Simulation log
+    GtkListStore *process_instructions_store; // Process instructions
+    GtkTreeIter  current_iter_instruction_log; // Current instruction marker
+
+    // === GTK Widgets ===
+    GtkWidget *quantum_input;               // Time quantum input (RR/MLFQ)
+    GtkWidget *quantum_button_box;          // Container for quantum controls
+
+    // === Algorithm-Specific UI Containers ===
+    union {
+        struct {
+            GtkWidget *fcfs_queue_view;     // FCFS-only UI elements
+        };
+        struct {
+            GtkWidget *rr_queue_view;       // RR-specific widgets
+            GtkWidget *rr_time_slice_label;
+        };
+        struct {
+            GtkWidget *mlfq_queues[4];     // MLFQ queues
+            GtkWidget *mlfq_priority_labels[4];
+        };
+    };
+} SimulationData;*/
+
+
+typedef struct {
+    GtkWidget *container;
+    GtkWidget **value_labels;
+    int count;
+} QueueWidget;
+
+// Forward declarations of scheduler functions
+void fcfs_scheduler();
+void rr_scheduler();
+void mlfq_scheduler();
+
+// Scheduler-specific functions (placeholders for your scheduling logic)
+void fcfs_scheduler() {
+    g_print("Starting FCFS Scheduler\n");
+
+}
+
+void rr_scheduler() {
+    g_print("Starting Round Robin Scheduler with quantum level: %d\n", quantum_level);
+}
+
+void mlfq_scheduler() {
+    g_print("Starting MLFQ Scheduler\n");
+}
+
+QueueWidget create_queue(const char *queue_title,
+    const char **headers,
+    const char **values,
+    int num_items) {
+QueueWidget result;
+result.count = num_items;
+result.value_labels = malloc(sizeof(GtkWidget *) * num_items);
+
+// Main vertical container
+GtkWidget *queue_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+
+// Queue title centered
+GtkWidget *label_title = gtk_label_new(queue_title);
+gtk_widget_set_halign(label_title, GTK_ALIGN_CENTER);
+gtk_box_pack_start(GTK_BOX(queue_box), label_title, FALSE, FALSE, 0);
+
+// Row container (4 columns total visually)
+GtkWidget *row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+
+// Left column with headers
+GtkWidget *label_column = gtk_box_new(GTK_ORIENTATION_VERTICAL, 3);
+
+// First data column with corresponding value labels
+GtkWidget *data_column = gtk_box_new(GTK_ORIENTATION_VERTICAL, 3);
+
+
+if (headers != NULL && values != NULL) {
+    for (int i = 0; i < num_items; i++) {
+        GtkWidget *header_label = gtk_label_new(headers[i]);
+        gtk_widget_set_name(header_label, "queue-header-label");
+        gtk_box_pack_start(GTK_BOX(label_column), header_label, FALSE, FALSE, 0);
+    }
+
+    for (int i = 0; i < num_items ; i++) {
+        result.value_labels[i] = gtk_label_new(values[i]);
+        gtk_widget_set_name(result.value_labels[i], "queue-data-label");
+        gtk_box_pack_start(GTK_BOX(data_column), result.value_labels[i], FALSE, FALSE, 0);
+    }
+}
+
+// Empty cells to simulate a 4-column layout
+GtkWidget *data_column2 = gtk_box_new(GTK_ORIENTATION_VERTICAL, 3);
+GtkWidget *data_column3 = gtk_box_new(GTK_ORIENTATION_VERTICAL, 3);
+GtkWidget *data_column4 = gtk_box_new(GTK_ORIENTATION_VERTICAL, 3);
+
+// Pack columns into the row container
+gtk_box_pack_start(GTK_BOX(row), label_column, FALSE, FALSE, 5);
+GtkWidget *sep1 = gtk_separator_new(GTK_ORIENTATION_VERTICAL);
+gtk_box_pack_start(GTK_BOX(row), sep1, FALSE, TRUE, 0);
+gtk_box_pack_start(GTK_BOX(row), data_column, FALSE, FALSE, 5);
+GtkWidget *sep2 = gtk_separator_new(GTK_ORIENTATION_VERTICAL);
+gtk_box_pack_start(GTK_BOX(row), sep2, FALSE, TRUE, 0);
+gtk_box_pack_start(GTK_BOX(row), data_column2, FALSE, FALSE, 5);
+GtkWidget *sep3 = gtk_separator_new(GTK_ORIENTATION_VERTICAL);
+gtk_box_pack_start(GTK_BOX(row), sep3, FALSE, TRUE, 0);
+gtk_box_pack_start(GTK_BOX(row), data_column3, FALSE, FALSE, 5);
+GtkWidget *sep4 = gtk_separator_new(GTK_ORIENTATION_VERTICAL);
+gtk_box_pack_start(GTK_BOX(row), sep4, FALSE, TRUE, 0);
+gtk_box_pack_start(GTK_BOX(row), data_column4, FALSE, FALSE, 5);
+
+
+// Pack row into the main vertical box
+gtk_box_pack_start(GTK_BOX(queue_box), row, FALSE, FALSE, 0);
+
+gtk_widget_set_name(queue_box, "queue-container");
+gtk_widget_set_name(label_title, "queue-title");
+gtk_widget_set_name(row, "queue-row");
+//gtk_widget_set_name(label_column, "queue-header-label");
+gtk_widget_set_name(data_column, "queue-data-label");
+gtk_widget_set_name(data_column2, "queue-empty-column");
+gtk_widget_set_name(data_column3, "queue-empty-column");
+
+result.container = queue_box;
+return result;
+} 
+
+GtkWidget *create_blocking_queues(const char *title,
+    const char **headers,
+    const char ***all_values, // 2D array for multiple queues
+    int num_queues,
+    int num_items_per_queue) {
+// Outer container
+GtkWidget *outer_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+
+// Title at the top
+GtkWidget *main_title = gtk_label_new(title);
+gtk_widget_set_halign(main_title, GTK_ALIGN_CENTER);
+gtk_widget_set_name(main_title, "main-title");
+gtk_box_pack_start(GTK_BOX(outer_box), main_title, FALSE, FALSE, 0);
+
+// Add each queue
+for (int i = 0; i < num_queues; i++) {
+QueueWidget queue = create_queue("", headers, all_values[i], num_items_per_queue);
+gtk_box_pack_start(GTK_BOX(outer_box), queue.container, FALSE, FALSE, 0);
+}
+
+return outer_box;
+}
+
+void free_queue_widget(QueueWidget *queue) {
+    if (queue->value_labels) {
+        for (int i = 0; i < queue->count; i++) {
+            if (queue->value_labels[i])
+                gtk_widget_destroy(queue->value_labels[i]);
+        }
+        free(queue->value_labels);
+    }
+    if (queue->container)
+        gtk_widget_destroy(queue->container);
+}
 
 //Creating the overview grid
 GtkWidget* create_overview_grid(){
@@ -129,14 +319,20 @@ static GtkWidget* create_hbox_for_queues() {
     GtkWidget *hbox;
 
     hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+
+    const char *headers[] = {"Process ID", "Instruction", "Time in Queue"};
+    const char *values[] = {"1", "Load", "5s"};
+
+    QueueWidget ready_queue = create_queue("Ready Queue", headers, values, 3);
+    gtk_box_pack_start(GTK_BOX(hbox), ready_queue.container, TRUE, TRUE, 0);
+
     //Queues
     const gchar *queue_column_names[] = {"Process ID", "Time in Queue"};
-    GtkWidget *ready_queue = create_labeled_treeview("Ready Queue", queue_column_names, 2, &ready_queue_store);
+    //GtkWidget *ready_queue = create_queue("Ready Queue", queue_column_names, 2, &ready_queue_store);
     GtkWidget *blocked_queue = create_labeled_treeview("Blocked Queue", queue_column_names, 2, &blocked_queue_store);
     const gchar *running_process_columns[] = {"Process ID"};
     GtkWidget *running_process = create_labeled_treeview("Running Process", running_process_columns, 1, &running_process_store);
 
-    gtk_box_pack_start(GTK_BOX(hbox), ready_queue, TRUE, TRUE, 0);
     gtk_box_pack_start(GTK_BOX(hbox), blocked_queue, TRUE, TRUE, 0);
     gtk_box_pack_start(GTK_BOX(hbox), running_process, TRUE, TRUE, 0);
 
@@ -159,6 +355,7 @@ GtkWidget* create_dashboard() {
         gtk_box_pack_start(GTK_BOX(dashboard_vbox), queues_hbox, TRUE, TRUE, 0);
     return dashboard_vbox;
 }
+
 
 //Creating method for labelled frames
 GtkWidget* create_labeled_frame(const gchar *label_text) {
@@ -192,9 +389,10 @@ void on_set_quantum_level_button_clicked(GtkWidget *widget, gpointer user_data) 
     }
 }
 // Creates the dropdown + conditional quantum_input/button
-GtkWidget* create_dropdown_with_quantum_input() {
-    GtkWidget *main_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
-
+GtkWidget* create_dropdown_with_quantum_input(GtkWidget **dropdown_out) {
+    GtkWidget *main_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 20);
+    gtk_widget_set_halign(main_hbox, GTK_ALIGN_CENTER); 
+    gtk_widget_set_valign(main_hbox, GTK_ALIGN_CENTER); 
     // Dropdown menu
     GtkWidget *dropdown = gtk_combo_box_text_new();
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(dropdown), "First Come First Serve");
@@ -202,7 +400,10 @@ GtkWidget* create_dropdown_with_quantum_input() {
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(dropdown), "Multilevel Feedback Queue");
     gtk_combo_box_set_active(GTK_COMBO_BOX(dropdown), 0);
     gtk_box_pack_start(GTK_BOX(main_hbox), dropdown, FALSE, FALSE, 0);
-
+    // Store dropdown in the output parameter
+    if (dropdown_out) {
+        *dropdown_out = dropdown;
+    }
     quantum_button_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_widget_set_visible(quantum_button_box, FALSE);
 
@@ -213,9 +414,8 @@ GtkWidget* create_dropdown_with_quantum_input() {
 
     GtkWidget *set_button = gtk_button_new_with_label("Set");
     gtk_box_pack_start(GTK_BOX(quantum_button_box), set_button, FALSE, FALSE, 0);
-
     gtk_box_pack_start(GTK_BOX(main_hbox), quantum_button_box, FALSE, FALSE, 0);
-
+    
     g_signal_connect(dropdown, "changed", G_CALLBACK(on_dropdown_changed), NULL);
     g_signal_connect(set_button, "clicked", G_CALLBACK(on_set_quantum_level_button_clicked), NULL);
 
@@ -224,15 +424,9 @@ GtkWidget* create_dropdown_with_quantum_input() {
 
 //Scheduler vbox
 GtkWidget* create_scheduler_vbox() {
-    GtkWidget* scheduler_vbox= gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
-    gtk_container_set_border_width(GTK_CONTAINER(scheduler_vbox), 10); 
 
-    // Scheduler dropdown and entry field
-    GtkWidget* drop_down_hbox =  create_dropdown_with_quantum_input();   
-    gtk_box_pack_start(GTK_BOX(scheduler_vbox), drop_down_hbox, FALSE, FALSE, 0);
-
-    // HBox for control buttons
     GtkWidget *button_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+    
 
     // Start Button
     GtkWidget *start_button = gtk_button_new_with_label("Start");
@@ -246,10 +440,7 @@ GtkWidget* create_scheduler_vbox() {
     GtkWidget *reset_button = gtk_button_new_with_label("Reset");
     gtk_box_pack_start(GTK_BOX(button_hbox), reset_button, TRUE, TRUE, 0);
 
-    // Add the button box to the scheduler panel
-    gtk_box_pack_start(GTK_BOX(scheduler_vbox), button_hbox, FALSE, FALSE,0);
-
-    return scheduler_vbox;
+    return button_hbox;
 }
 
 //Resource Vbox
@@ -345,28 +536,9 @@ GtkWidget* create_process_config_hbox() {
         return process_config_hbox;
     }
 
-//Process Creation
-GtkWidget* create_process_creation(){
-    GtkWidget* process_creation_hbox= gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 20);
-    gtk_container_set_border_width(GTK_CONTAINER(process_creation_hbox), 10);
-    //Add Process Button
-    GtkWidget *add_button = gtk_button_new_with_label("Add Process");
-    gtk_widget_set_size_request(add_button, 120, 40); 
-    gtk_widget_set_valign(add_button, GTK_ALIGN_CENTER); 
-    gtk_box_pack_start(GTK_BOX(process_creation_hbox), add_button, FALSE, FALSE, 0);
-
-    // Process Configuration
-    GtkWidget *process_config_hbox = create_process_config_hbox();
-    gtk_widget_set_valign(process_config_hbox, GTK_ALIGN_CENTER); 
-    gtk_box_pack_end(GTK_BOX(process_creation_hbox), process_config_hbox, TRUE, TRUE, 0); 
-    gtk_widget_set_margin_start(process_creation_hbox, 20); 
-    gtk_widget_set_margin_end(process_creation_hbox, 20); 
-
-    return process_creation_hbox;
-}
 //Changing current instr (for backend)
 void append_instruction_log(const gchar *instruction, const gchar *pid, const gchar *reaction) {
-    // If there's a valid current row, clean it up before updating
+    // If there's a valid current row, clean it upbefore updating
     if (gtk_list_store_iter_is_valid(log_store, &current_iter_instruction_log)) {
         gchar *old_instr = NULL;
         gtk_tree_model_get(GTK_TREE_MODEL(log_store), &current_iter_instruction_log, 0, &old_instr, -1); // Get current instruction
@@ -384,7 +556,6 @@ void append_instruction_log(const gchar *instruction, const gchar *pid, const gc
             if (pos) *pos = '\0';
 
             gtk_list_store_set(log_store, &current_iter_instruction_log, 0, cleaned, -1);
-
             g_free(original);  // safe free
             g_free(old_instr); // now we can safely free GTK's return
         }
@@ -433,19 +604,94 @@ void load_styles() {
     );
 }
 
-// Function to activate the GTK application window
-static void activate(GtkApplication *app, gpointer user_data) {
+GtkWidget* create_fcfs_dashboard() {
+    GtkWidget* dashboard_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 20);
 
+    // Overview grid
+    GtkWidget* overview_grid = create_overview_grid();
+    gtk_box_pack_start(GTK_BOX(dashboard_vbox), overview_grid, FALSE, FALSE, 0);
+
+    // Horizontal box to hold ready queue and blocking queues
+    GtkWidget *hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 20);
+    gtk_box_pack_start(GTK_BOX(dashboard_vbox), hbox, FALSE, FALSE, 0);
+
+    // Ready Queue
+    const char *ready_headers[] = {"Process ID", "Instruction", "Time in Queue"};
+    const char *ready_values[] = {"1", "Load", "5s"}; // Example data
+    QueueWidget ready_queue = create_queue("Ready Queue", ready_headers, ready_values, 3);
+    gtk_box_pack_start(GTK_BOX(hbox), ready_queue.container, FALSE, FALSE, 0);
+
+    // Right side VBox for blocking queues
+    GtkWidget *blocking_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 20);
+    gtk_box_pack_start(GTK_BOX(hbox), blocking_vbox, FALSE, FALSE, 0);
+
+    // Blocking queues
+    const char *blocking_headers[] = {"Process ID", "Instruction", "Time in Queue"};
+
+    // Dummy data for blocking queues
+    const char *userinput_values[] = {"2", "Input", "3s"};
+    const char *useroutput_values[] = {"3", "Output", "2s"};
+    const char *file_values[] = {"4", "File Read", "4s"};
+
+    // User Input Blocking Queue
+    QueueWidget userinput_queue = create_queue("User Input Blocking Queue", blocking_headers, userinput_values, 3);
+    gtk_box_pack_start(GTK_BOX(blocking_vbox), userinput_queue.container, FALSE, FALSE, 0);
+
+    // User Output Blocking Queue
+    QueueWidget useroutput_queue = create_queue("User Output Blocking Queue", blocking_headers, useroutput_values, 3);
+    gtk_box_pack_start(GTK_BOX(blocking_vbox), useroutput_queue.container, FALSE, FALSE, 0);
+
+    // File Blocking Queue
+    QueueWidget file_queue = create_queue("File Blocking Queue", blocking_headers, file_values, 3);
+    gtk_box_pack_start(GTK_BOX(blocking_vbox), file_queue.container, FALSE, FALSE, 0);
+
+    return dashboard_vbox;
+}
+
+// MLFQ Dashboard: Multiple priority queues
+GtkWidget* create_mlfq_dashboard() {
+    GtkWidget* dashboard_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 20);
+
+    // Overview grid
+    GtkWidget* overview_grid = create_overview_grid();
+    gtk_box_pack_start(GTK_BOX(dashboard_vbox), overview_grid, FALSE, FALSE, 0);
+
+    // Process List
+    const gchar *process_list_column_names[] = {"Process ID", "State", "Priority", "Memory Boundaries", "Program Counter"};
+    GtkWidget* process_list_treeview = create_labeled_treeview("Process List", process_list_column_names, 5, &process_list_store);
+    gtk_box_pack_start(GTK_BOX(dashboard_vbox), process_list_treeview, TRUE, TRUE, 0);
+
+    // MLFQ Priority Queues (4 levels)
+    GtkWidget* queues_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+    const gchar *queue_column_names[] = {"Process ID", "Priority"};
+    for (int i = 0; i < 4; i++) {
+        gchar* queue_title = g_strdup_printf("Priority Queue %d", i);
+        GtkListStore* temp_store; // Temporary store for each queue
+        GtkWidget* queue = create_labeled_treeview(queue_title, queue_column_names, 2, &temp_store);
+        gtk_box_pack_start(GTK_BOX(queues_hbox), queue, TRUE, TRUE, 0);
+        g_free(queue_title);
+        // Note: You may want to store these temp_stores globally if you need to update them later
+    }
+    gtk_box_pack_start(GTK_BOX(dashboard_vbox), queues_hbox, TRUE, TRUE, 0);
+
+    // Running Process
+    const gchar *running_process_columns[] = {"Process ID"};
+    GtkWidget* running_process = create_labeled_treeview("Running Process", running_process_columns, 1, &running_process_store);
+    gtk_box_pack_start(GTK_BOX(dashboard_vbox), running_process, TRUE, TRUE, 0);
+
+    return dashboard_vbox;
+}
+
+
+static void setup_main_window(GtkWidget *window) {
     // Load CSS styles
     load_styles();
 
-    // Create main window
-    GtkWidget* window = gtk_application_window_new(app);
-    gtk_window_set_title(GTK_WINDOW(window), "Scheduler Simulation");
-    gtk_window_set_default_size(GTK_WINDOW(window), 1500, 950);
+    // Create main window    gtk_window_set_title(GTK_WINDOW(main_window), "Scheduler Simulation");
+    gtk_window_set_default_size(GTK_WINDOW(main_window), 1500, 950);
     GtkWidget* scrolled_window = gtk_scrolled_window_new(NULL, NULL);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-    gtk_container_add(GTK_CONTAINER(window), scrolled_window);
+    gtk_container_add(GTK_CONTAINER(main_window), scrolled_window);
 
     //Main Container vbox
     GtkWidget* main_container = gtk_box_new(GTK_ORIENTATION_VERTICAL, 20);
@@ -455,14 +701,27 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_widget_set_margin_end(main_container, 20);
 
     //Main Dashboard
-    GtkWidget* dashboard_frame=create_labeled_frame("<span font='12'><b>Main Dashboard</b></span>");
+    GtkWidget* dashboard_frame = create_labeled_frame("<span font='12'><b>Main Dashboard</b></span>");
     gtk_box_pack_start(GTK_BOX(main_container), dashboard_frame, FALSE, FALSE, 0);
-    GtkWidget* dashboard_vbox= create_dashboard(); 
+    GtkWidget* dashboard_vbox;
+    if (g_strcmp0(current_scheduler, "First Come First Serve") == 0) {
+        dashboard_vbox = create_fcfs_dashboard();
+    } else if (g_strcmp0(current_scheduler, "Round Robin") == 0) {
+        dashboard_vbox = create_rr_dashboard();
+    } else if (g_strcmp0(current_scheduler, "Multilevel Feedback Queue") == 0) {
+        dashboard_vbox = create_mlfq_dashboard();
+    } else {
+        // Fallback dashboard (shouldn't happen)
+        dashboard_vbox = create_dashboard(); // Use original dashboard as fallback
+    }
     gtk_container_add(GTK_CONTAINER(dashboard_frame), dashboard_vbox);
 
+    
     // Scheduler Panel
-    GtkWidget* scheduler_frame = create_labeled_frame("<span font='12'><b>Scheduler Control Panel</b></span>");
+    GtkWidget* scheduler_frame = gtk_frame_new(NULL);
+    gtk_frame_set_shadow_type(GTK_FRAME(scheduler_frame), GTK_SHADOW_IN);
     gtk_box_pack_start(GTK_BOX(main_container), scheduler_frame, FALSE, FALSE, 0);  
+    gtk_widget_set_size_request(scheduler_frame, -1, 50);
     GtkWidget* scheduler_vbox = create_scheduler_vbox();
     gtk_container_add(GTK_CONTAINER(scheduler_frame), scheduler_vbox);
 
@@ -477,12 +736,6 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_box_pack_start(GTK_BOX(main_container), memory_log_frame, FALSE, FALSE, 0);
     GtkWidget *memory_log_hbox = create_memory_log_hbox();
     gtk_container_add(GTK_CONTAINER(memory_log_frame), memory_log_hbox);
-
-    // Process Creation
-    GtkWidget* process_creation_frame = create_labeled_frame("<span font='12'><b>Process Creation</b></span>");
-    gtk_box_pack_start(GTK_BOX(main_container), process_creation_frame, FALSE, FALSE, 0);
-    GtkWidget* process_creation_hbox = create_process_creation();
-    gtk_container_add(GTK_CONTAINER(process_creation_frame), process_creation_hbox);
 
     //Execution Frame
     GtkWidget* execution_frame = gtk_frame_new(NULL);
@@ -502,16 +755,11 @@ static void activate(GtkApplication *app, gpointer user_data) {
         3, "0-100", 
         4, "500", 
         -1);
-    // Ready Queue sample data
+    /* Ready Queue sample data
     gtk_list_store_insert_with_values(ready_queue_store, NULL, -1, 
         0, "3", 
         1, "5", 
-        -1);
-    // Blocked Queue sample data
-    gtk_list_store_insert_with_values(blocked_queue_store, NULL, -1, 
-        0, "5", 
-        1, "7", 
-        -1);
+        -1);*/
     // Running Process sample data
     gtk_list_store_insert_with_values(running_process_store, NULL, -1, 
         0, "7", 
@@ -538,26 +786,223 @@ static void activate(GtkApplication *app, gpointer user_data) {
         g_free(address_str);
     }
     // Log & Console sample data
-    
-    //instruction log
-    append_instruction_log("LOAD R1, A", "P1", "Acquired userquantum_input");
+    append_instruction_log("LOAD R1, A", "P1", "Acquired user quantum_input");
     append_instruction_log("ADD R2, R1", "P2", "Waiting for file");
-    append_instruction_log("STORE R2, B", "P3", "Released userquantum_input");
+    append_instruction_log("STORE R2, B", "P3", "Released user quantum_input");
 
-    // Show everything
     g_timeout_add(0, (GSourceFunc)gtk_widget_hide, quantum_button_box);
     gtk_widget_show_all(window);
+}
 
+void on_simulate_clicked(GtkButton *button, gpointer user_data) {
+    GtkComboBoxText *dropdown = GTK_COMBO_BOX_TEXT(user_data);
+    const gchar *algorithm = gtk_combo_box_text_get_active_text(dropdown);
+    
+    // Store selected algorithm in global variable
+    if (current_scheduler) g_free(current_scheduler); // Free previous if any
+         current_scheduler = g_strdup(algorithm);
+    // Call the appropriate scheduler function based on the selection
+    if (g_strcmp0(current_scheduler, "First Come First Serve") == 0) {
+        printf("Selected: First Come First Serve\n");
+    } else if (g_strcmp0(current_scheduler, "Round Robin") == 0) {
+        printf("Selected: Round Robin\n");
+    } else if (g_strcmp0(current_scheduler, "Multilevel Feedback Queue") == 0) {
+        printf("Selected: Multilevel Feedback Queue\n");
+    } else {
+        g_print("Unknown algorithm selected.\n");
+    }
+    
+    // Close initial window
+    GtkWindow *initial_window = GTK_WINDOW(gtk_widget_get_toplevel(GTK_WIDGET(button)));
+    gtk_widget_destroy(GTK_WIDGET(initial_window));
+
+    // Create and show main window
+    main_window = gtk_application_window_new(application);
+    setup_main_window(main_window);  // We'll modify your existing activate code
+}
+
+// This callback is triggered when "Add Process" is clicked
+void on_close_clicked(GtkWidget *button, GtkWidget *popup_window) {
+    // Perform your processing logic (like adding the process)
+
+    // Close the popup window
+    gtk_window_close(GTK_WINDOW(popup_window));  // This will close the window
+}
+// This function will handle the file confirmation and display contents in a new popup window
+void handle_file_confirmation(GtkWidget *file_chooser) {
+    gchar *filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(file_chooser));
+    printf("File selected: %s\n", filename);
+
+    // Create a new popup window to display the file content
+    GtkWidget *popup_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(popup_window), "File Contents");
+    gtk_window_set_default_size(GTK_WINDOW(popup_window), 400, 300);
+
+    GtkWidget *popup_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_container_add(GTK_CONTAINER(popup_window), popup_vbox);
+    
+    GtkWidget *content_label = gtk_label_new("Instructions:");
+    gtk_box_pack_start(GTK_BOX(popup_vbox), content_label, FALSE, FALSE, 5);
+
+    // Check if the file is valid (could be replaced by your file list or validation logic)
+    if (g_strcmp0(filename, "/home/mmhs2004/os_gui/Programs/Program_1.txt") == 0 ||
+        g_strcmp0(filename, "/home/mmhs2004/os_gui/Programs/Program_2.txt") == 0 ||
+        g_strcmp0(filename, "/home/mmhs2004/os_gui/Programs/Program_3.txt") == 0) {
+
+        FILE *file = fopen(filename, "r");
+        if (file) {
+            char line[256];
+            // Read the file and display its content in the popup
+            while (fgets(line, sizeof(line), file)) {
+                GtkWidget *line_label = gtk_label_new(line);
+                gtk_box_pack_start(GTK_BOX(popup_vbox), line_label, FALSE, FALSE, 5);
+            }
+            // Entry Field
+            GtkWidget *process_config_hbox = create_process_config_hbox();
+            gtk_widget_set_valign(process_config_hbox, GTK_ALIGN_CENTER);
+
+            // Pack the process config box before the button
+            gtk_box_pack_start(GTK_BOX(popup_vbox), process_config_hbox, FALSE, FALSE, 0);
+
+            // Create the "Add Process" button
+            GtkWidget* close_button = gtk_button_new_with_label("Close");
+            gtk_widget_set_size_request(close_button, 80, 35);
+            gtk_widget_set_margin_start(close_button, 20);    
+            gtk_widget_set_margin_end(close_button, 20);
+            gtk_widget_set_halign(close_button, GTK_ALIGN_CENTER);
+            gtk_widget_set_valign(close_button, GTK_ALIGN_CENTER);
+
+            // Pack the button after the process config
+            gtk_box_pack_end(GTK_BOX(popup_vbox), close_button, TRUE, TRUE, 0);
+            g_signal_connect(close_button, "clicked", G_CALLBACK(on_close_clicked), popup_window);
+            fclose(file);  // Close the file after reading
+             
+        } else {
+            GtkWidget *error_label = gtk_label_new("Error: Unable to open the selected file.");
+            gtk_box_pack_start(GTK_BOX(popup_vbox), error_label, FALSE, FALSE, 5);
+        }
+    } else {
+        GtkWidget *error_label = gtk_label_new("Error: Invalid file selected.");
+        gtk_box_pack_start(GTK_BOX(popup_vbox), error_label, FALSE, FALSE, 5);
+    }
+
+    
+    g_free(filename);  // Free the filename string
+
+    // Show the popup window
+    gtk_widget_show_all(popup_window);
+}
+
+// This function shows the dialog for file selection
+void on_add_process_clicked(GtkWidget *widget, gpointer data) {
+    GtkWidget *dialog, *file_chooser;
+    gint result;
+
+    // Create the dialog window (this is for selecting the file)
+    dialog = gtk_dialog_new_with_buttons("Choose a Program File",
+                                        GTK_WINDOW(data), 
+                                        GTK_DIALOG_MODAL,
+                                        "_Cancel", GTK_RESPONSE_REJECT,
+                                        "_Confirm", GTK_RESPONSE_ACCEPT,
+                                        NULL);
+
+    // Set up file chooser
+    file_chooser = gtk_file_chooser_widget_new(GTK_FILE_CHOOSER_ACTION_OPEN);
+    gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(file_chooser), "./Programs");
+    GtkFileFilter *filter = gtk_file_filter_new();
+    gtk_file_filter_add_pattern(filter, "*.txt");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(file_chooser), filter);
+    gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(file_chooser), "./Programs/Program_1.txt");
+
+    // Add file chooser to dialog
+    gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(dialog))), file_chooser, TRUE, TRUE, 10);
+    gtk_widget_show_all(dialog);
+
+    // Run the dialog and wait for the result
+    result = gtk_dialog_run(GTK_DIALOG(dialog));
+
+    if (result == GTK_RESPONSE_ACCEPT) {
+        // Call the function to handle confirmation and show the file content in a new popup window
+        handle_file_confirmation(file_chooser);
+    } else if (result == GTK_RESPONSE_REJECT) {
+        printf("File selection was canceled.\n");
+    }
+
+    gtk_widget_destroy(dialog);  // Close the dialog
+}
+
+GtkWidget* create_initial_window() {
+    load_styles();
+    
+    // Create initial window
+    GtkWidget* initial_window = gtk_application_window_new(application);
+    gtk_window_set_default_size(GTK_WINDOW(initial_window), 1500, 950);
+
+    //frame
+    GtkWidget* initial_frame = gtk_frame_new(NULL);
+    gtk_container_add(GTK_CONTAINER(initial_window), initial_frame);
+    gtk_widget_set_margin_start(initial_frame, 20);
+    gtk_widget_set_margin_end(initial_frame, 20);
+
+    GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 30);
+    gtk_container_add(GTK_CONTAINER(initial_frame), vbox);
+    gtk_box_set_homogeneous(GTK_BOX(vbox), FALSE);
+    gtk_container_set_border_width(GTK_CONTAINER(vbox), 20); 
+
+    GtkWidget *title_label = gtk_label_new("Scheduler Simulation");
+    gtk_widget_set_name(title_label, "title-label");  
+
+    gtk_box_pack_start(GTK_BOX(vbox), title_label, FALSE, FALSE, 0);
+
+    GtkWidget *dropdown_label = gtk_label_new("Which scheduler would you like to use for the simulation?");
+    gtk_widget_set_name(dropdown_label, "dropdown-label"); 
+    gtk_box_pack_start(GTK_BOX(vbox), dropdown_label, FALSE, FALSE, 0);
+    
+    // Dropdown menu
+    GtkWidget* dropdown_hbox = create_dropdown_with_quantum_input(&dropdown);
+    gtk_box_pack_start(GTK_BOX(vbox), dropdown_hbox, FALSE, FALSE, 0);
+
+    //Process
+    GtkWidget *processes_label = gtk_label_new("Which process(es) would you like to add?");
+    gtk_widget_set_name(processes_label, "processes-label");  
+    gtk_box_pack_start(GTK_BOX(vbox), processes_label, FALSE, FALSE, 0);
+
+    //Add Process Button
+    GtkWidget *add_button = gtk_button_new_with_label("Add Process");
+    gtk_widget_set_size_request(add_button, 120, 40); 
+    gtk_widget_set_valign(add_button, GTK_ALIGN_CENTER); 
+    gtk_box_pack_start(GTK_BOX(vbox), add_button, FALSE, FALSE, 0);
+    g_signal_connect(add_button, "clicked", G_CALLBACK(on_add_process_clicked), initial_window);
+
+    // Simulate button
+    GtkWidget *simulate_btn = gtk_button_new_with_label("Start Simulation!");
+    g_signal_connect(simulate_btn, "clicked", G_CALLBACK(on_simulate_clicked), dropdown);
+    gtk_box_pack_start(GTK_BOX(vbox), simulate_btn, FALSE, FALSE, 0);
+
+    gtk_widget_set_halign(vbox, GTK_ALIGN_CENTER); 
+    gtk_widget_set_valign(vbox, GTK_ALIGN_CENTER); 
+
+    return initial_window;
+}
+
+
+// Function to activate the GTK application window
+static void activate(GtkApplication *app, gpointer user_data) {
+    g_print("— activate() has been called —\n");
+    application=app;
+    // Create the initial window
+    GtkWidget *initial_window = create_initial_window(app);
+    gtk_application_add_window(app, GTK_WINDOW(initial_window));
+    g_timeout_add(0, (GSourceFunc)gtk_widget_hide, quantum_button_box);
+    gtk_widget_show_all(initial_window);
 }
 
 int main(int argc, char *argv[]) {
-    GtkApplication *app;
     int status;
-
-    app = gtk_application_new("simulation.scheduler", G_APPLICATION_DEFAULT_FLAGS);
-    g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
-    status = g_application_run(G_APPLICATION(app), argc, argv);
-    g_object_unref(app);
+    application = gtk_application_new("simulation.scheduler", G_APPLICATION_DEFAULT_FLAGS);
+    g_signal_connect(application, "activate", G_CALLBACK(activate), NULL);
+    status = g_application_run(G_APPLICATION(application), argc, argv);
+    g_object_unref(application);
 
     return status;
 }

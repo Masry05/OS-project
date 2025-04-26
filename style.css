@@ -106,3 +106,97 @@ treeview.view:selected {
   box-shadow: none;
   outline: none;
 }
+
+/* ---------- All Labels ---------- */
+label {
+  color: #333333;          /* dark gray text */
+  font-family: sans-serif;
+}
+
+/* ---------- Title Label ---------- */
+/* Title label style */
+#title-label {
+  font-size: 36px;                  /* Large font size */
+  font-weight: bold;                /* Bold font */
+  color: #222222;                   /* Almost black text color */
+  letter-spacing: 1px;              /* Slight letter spacing */
+  padding-bottom: 8px;              /* Space under the text */
+  border-bottom: 2px solid #CCCCCC; /* Light gray underline */
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1); /* Subtle shadow effect */
+  margin-bottom: 20px;              /* Space after the title */
+  font-family: "Sans", sans-serif;  /* Sans-serif font family */
+}
+
+
+/* ---------- Section Labels (dropdown, processes) ---------- */
+#dropdown-label,
+#processes-label {
+  font-size: 18px;         /* medium */
+  font-weight: 600;        /* semi-bold */
+  margin-top: 12px;        /* space above */
+  margin-bottom: 8px;      /* space below */
+}
+
+/* ---------- Section Labels (dropdown, processes) ---------- */
+#dropdown-label,
+#processes-label {
+  font-size: 18px;         /* medium */
+  font-weight: 600;        /* semi-bold */
+  margin-top: 12px;        /* space above */
+  margin-bottom: 8px;      /* space below */
+}
+
+/* The whole row (HBox) — black outer border */
+#queue-row {
+  border: 2px solid #000;
+  background-color: #ffffff;
+  padding: 5px;
+  margin: 5px;
+}
+
+/* Columns inside the row — vertical borders */
+.column-box {
+  border-right: 1px solid #000;
+  padding: 5px;
+}
+
+/* Last column — no right border */
+.column-box:last-child {
+  border-right: none;
+}
+
+/* Headers column — light grey background */
+#headers-column {
+  background-color: #d3d3d3;
+}
+
+/* Header labels */
+#queue-header-label {
+  font-weight: bold;
+  padding: 5px 10px;
+  color: #000000;
+}
+
+/* Data labels */
+#queue-data-label {
+  background-color: #ffffff;
+  padding: 5px 10px;
+  color: #000000;
+}
+
+/* (Optional: empty columns — same style as data) */
+#queue-empty-column {
+  background-color: #ffffff;
+  padding: 5px 10px;
+  color: #000000;
+}
+
+separator {
+  background-color: #000000;
+  min-width: 1px;
+  margin: 0px;
+}
+
+
+
+
