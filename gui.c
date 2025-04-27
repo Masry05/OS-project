@@ -6,10 +6,11 @@
 //Global Variables
 GtkApplication *application=NULL;
 
+//Tables
 GtkListStore *process_list_store;
 GtkListStore *mutex_status_store;
 GtkListStore *memory_viewer_store;
-GtkListStore *log_store;
+GtkListStore *log_store; //Execution Log
 GtkListStore *process_instructions_store;
 GtkTreeIter current_iter_instruction_log;
 
@@ -48,7 +49,7 @@ typedef struct {
     char *filename;        // Program file path
 } ProcessInfo;
 // Global list to store processes
-GList *process_list = NULL;
+GList *process_list = NULL; 
 
 // Modified SetButtonData to include filename
 typedef struct {
@@ -58,11 +59,12 @@ typedef struct {
 } SetButtonData;
 
 // Forward declarations of scheduler functions
+//backend
 void fcfs_scheduler();
 void rr_scheduler();
 void mlfq_scheduler();
 
-// Scheduler-specific functions (placeholders for your integration)
+// backend
 void fcfs_scheduler() {
     g_print("Starting FCFS Scheduler\n");
 
