@@ -32,6 +32,7 @@ int curr_clock_cycle=0;
 char *current_scheduler = NULL; // Global variable to store the current scheduler type
 int quantum_level = 0;
 double arrival_time = 0.0; // Global variable to store arrival time
+gchar *last_user_input = NULL; // Global variable
 
 typedef struct {
     GtkWidget *container;
@@ -40,9 +41,20 @@ typedef struct {
     int num_attributes;        // Number of attributes (e.g., 3 for PID, Instruction, Time)
 } DynamicQueueWidget;
 
+// New global data structure for process tracking
+typedef struct {
+    int pid;               // Process ID
+    double arrival_time;   // Arrival time
+    char *filename;        // Program file path
+} ProcessInfo;
+// Global list to store processes
+GList *process_list = NULL;
+
+// Modified SetButtonData to include filename
 typedef struct {
     GtkWidget *entry;
     GtkWidget *popup_window;
+    char *filename;        // Add filename to pass to callback
 } SetButtonData;
 
 // Forward declarations of scheduler functions
@@ -400,6 +412,7 @@ void on_set_arrival_time_clicked(GtkButton *button, gpointer user_data) {
     SetButtonData *data = (SetButtonData *)user_data;
     GtkWidget *entry = data->entry;
     GtkWidget *popup_window = data->popup_window;
+    char *filename = data->filename;
 
     // Process the arrival time
     const gchar *text = gtk_entry_get_text(GTK_ENTRY(entry));
@@ -409,26 +422,57 @@ void on_set_arrival_time_clicked(GtkButton *button, gpointer user_data) {
         if (endptr != text && *endptr == '\0') {
             arrival_time = value;
             g_print("Arrival time set to: %.2f\n", arrival_time);
+
+            // Increment total processes
+            total_processes++;
+            char *total_processes_str = g_strdup_printf("%d", total_processes);
+            gtk_label_set_text(GTK_LABEL(label_total_procs_value), total_processes_str);
+            g_free(total_processes_str);
+
+            // Create new process info
+            ProcessInfo *process = g_new(ProcessInfo, 1);
+            process->pid = total_processes; // Simple PID assignment
+            process->arrival_time = arrival_time;
+            process->filename = g_strdup(filename);
+
+            // Append to process list
+            process_list = g_list_append(process_list, process);
+
+            // Add process to process_list_store for display
+            gtk_list_store_insert_with_values(process_list_store, NULL, -1,
+                0, g_strdup_printf("%d", process->pid),
+                1, "Ready",
+                2, "Normal",
+                3, "TBD", // Memory boundaries to be determined
+                4, "0",   // Program counter initial value
+                -1);
+
+            g_print("Process %d added with arrival time %.2f and file %s\n",
+                    process->pid, process->arrival_time, process->filename);
         } else {
             g_print("Invalid input for arrival time.\n");
         }
+    } else {
+        g_print("No arrival time entered.\n");
     }
 
     // Close the popup window
     gtk_window_close(GTK_WINDOW(popup_window));
 }
 
-// Callback to free SetButtonData when the popup is destroyed
+// Modified callback to free SetButtonData
 void on_popup_destroy(GtkWidget *widget, gpointer user_data) {
-    g_free(user_data);
+    SetButtonData *data = (SetButtonData *)user_data;
+    if (data->filename) g_free(data->filename);
+    g_free(data);
 }
 
-// Function to create the process config HBox with label, entry, and button
-GtkWidget* create_process_config_hbox(GtkWidget *popup_window) {
+// Modified function to create the process config HBox
+GtkWidget* create_process_config_hbox(GtkWidget *popup_window, const char *filename) {
     GtkWidget *process_config_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
     gtk_container_set_border_width(GTK_CONTAINER(process_config_hbox), 5);
 
-    // Arrival Time Label 
+    // Arrival Time Label
     GtkWidget *process_arrival_time_label = gtk_label_new("Arrival Time:");
     gtk_widget_set_valign(process_arrival_time_label, GTK_ALIGN_CENTER);
     gtk_box_pack_start(GTK_BOX(process_config_hbox), process_arrival_time_label, FALSE, FALSE, 0);
@@ -436,20 +480,21 @@ GtkWidget* create_process_config_hbox(GtkWidget *popup_window) {
     // Entry Field
     GtkWidget *arrival_entry = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(arrival_entry), "Please enter the arrival time");
-    gtk_widget_set_size_request(arrival_entry, 230, 35); // Consistent height
+    gtk_widget_set_size_request(arrival_entry, 230, 35);
     gtk_widget_set_valign(arrival_entry, GTK_ALIGN_CENTER);
     gtk_box_pack_start(GTK_BOX(process_config_hbox), arrival_entry, FALSE, FALSE, 0);
 
-    // Set Button 
+    // Set Button
     GtkWidget *set_button = gtk_button_new_with_label("Set");
-    gtk_widget_set_size_request(set_button, 80, 35); 
+    gtk_widget_set_size_request(set_button, 80, 35);
     gtk_widget_set_valign(set_button, GTK_ALIGN_CENTER);
     gtk_box_pack_start(GTK_BOX(process_config_hbox), set_button, FALSE, FALSE, 0);
 
-    // Pass both the entry and popup_window to the callback
+    // Pass entry, popup_window, and filename to the callback
     SetButtonData *data = g_new(SetButtonData, 1);
     data->entry = arrival_entry;
     data->popup_window = popup_window;
+    data->filename = g_strdup(filename);
     g_signal_connect(G_OBJECT(set_button), "clicked", G_CALLBACK(on_set_arrival_time_clicked), data);
 
     // Free data when the popup is destroyed
@@ -457,7 +502,6 @@ GtkWidget* create_process_config_hbox(GtkWidget *popup_window) {
 
     return process_config_hbox;
 }
-
 //Changing current instr (for backend)
 void append_instruction_log(const gchar *instruction, const gchar *pid, const gchar *reaction) {
     // If there's a valid current row, clean it up before updating
@@ -524,6 +568,88 @@ void load_styles() {
         GTK_STYLE_PROVIDER_PRIORITY_APPLICATION
     );
 }
+// Callback for Enter key (activate signal)
+static void on_entry_activate(GtkEntry *entry, gpointer user_data) {
+    gchar **result = (gchar **)user_data;
+    const gchar *text = gtk_entry_get_text(entry);
+    if (text && *text != '\0') {
+        *result = g_strdup(text); // Save input to result
+    }
+}
+
+// Function to create a popup dialog with an input field
+gchar* create_input_dialog(GtkWindow *parent) {
+    // Create a modal dialog
+    GtkWidget *dialog = gtk_dialog_new_with_buttons(
+        "User Input",
+        parent,
+        GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+        "_Cancel",
+        GTK_RESPONSE_CANCEL,
+        "_OK",
+        GTK_RESPONSE_OK,
+        NULL
+    );
+    gtk_window_set_default_size(GTK_WINDOW(dialog), 300, 150);
+
+    // Get the content area
+    GtkWidget *content_area = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
+    GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_container_add(GTK_CONTAINER(content_area), vbox);
+    gtk_container_set_border_width(GTK_CONTAINER(vbox), 10);
+
+    // Add a label with instructions
+    GtkWidget *label = gtk_label_new("Enter a value and press Enter:");
+    gtk_box_pack_start(GTK_BOX(vbox), label, FALSE, FALSE, 5);
+
+    // Add an entry field
+    GtkWidget *entry = gtk_entry_new();
+    gtk_entry_set_placeholder_text(GTK_ENTRY(entry), "Enter value");
+    gtk_widget_set_size_request(entry, 200, 35);
+    gtk_box_pack_start(GTK_BOX(vbox), entry, FALSE, FALSE, 5);
+
+    // Apply CSS classes for styling (remove if not using style.css)
+    gtk_style_context_add_class(gtk_widget_get_style_context(dialog), "dialog");
+    gtk_style_context_add_class(gtk_widget_get_style_context(entry), "entry");
+    gtk_style_context_add_class(gtk_widget_get_style_context(label), "label");
+
+    // Variable to store the input
+    gchar *result = NULL;
+
+    // Connect Enter key signal
+    g_signal_connect(entry, "activate", G_CALLBACK(on_entry_activate), &result);
+    g_signal_connect_swapped(entry, "activate", G_CALLBACK(gtk_dialog_response), dialog);
+
+    // Show all widgets
+    gtk_widget_show_all(content_area);
+
+    // Run the dialog
+    gint response = gtk_dialog_run(GTK_DIALOG(dialog));
+    if (response != GTK_RESPONSE_OK) {
+        g_free(result); // Free if set but canceled
+        result = NULL;
+    }
+
+    // Destroy the dialog
+    gtk_widget_destroy(dialog);
+    return result; // Return value for saving in last_user_input
+}
+
+// Callback for a button to trigger the input dialog
+void on_input_dialog_clicked(GtkButton *button, gpointer user_data) {
+    GtkWindow *parent = GTK_WINDOW(user_data);
+    // Call the dialog and save the return value to global
+    gchar *user_input = create_input_dialog(parent);
+    if (user_input) {
+        if (last_user_input) g_free(last_user_input); // Free previous value
+        last_user_input = g_strdup(user_input); // Save to global variable
+        g_print("User input saved in last_user_input: %s\n", last_user_input);
+        g_free(user_input); // Free the temporary return value
+    } else {
+        g_print("No input or dialog canceled\n");
+    }
+}
+
 GtkWidget* create_fcfs_dashboard() {
     GtkWidget* dashboard_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 20);
 
@@ -780,7 +906,19 @@ static void setup_main_window(GtkWidget *window) {
     GtkWidget* execution_hbox = create_execution_hbox();
     gtk_container_add(GTK_CONTAINER(execution_frame), execution_hbox);
 
+        // Add button to trigger input dialog
+        //GtkWidget *input_button = gtk_button_new_with_label("Open Input Dialog");
+        //gtk_style_context_add_class(gtk_widget_get_style_context(input_button), "button");
+        //g_signal_connect(input_button, "clicked", G_CALLBACK(on_input_dialog_clicked), window);
+        //gtk_box_pack_start(GTK_BOX(main_container), input_button, FALSE, FALSE, 0);
+
     //SAMPLE DATA
+
+    for (GList *iter = process_list; iter != NULL; iter = iter->next) {
+        ProcessInfo *process = (ProcessInfo *)iter->data;
+        g_print("PID: %d, Arrival Time: %.2f, File: %s\n",
+                process->pid, process->arrival_time, process->filename);
+    }
 
     //Process List sample data
     gtk_list_store_insert_with_values(process_list_store, NULL, -1, 
@@ -845,13 +983,15 @@ void on_simulate_clicked(GtkButton *button, gpointer user_data) {
     // Create and show main window
     main_window = gtk_application_window_new(application);
     setup_main_window(main_window);  // We'll modify your existing activate code
+
+
 }
 
 
 // This function will handle the file confirmation and display contents in a new popup window
 void handle_file_confirmation(GtkWidget *file_chooser) {
     gchar *filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(file_chooser));
-    printf("File selected: %s\n", filename);
+    g_print("File selected: %s\n", filename);
 
     // Create a new popup window to display the file content
     GtkWidget *popup_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -860,11 +1000,11 @@ void handle_file_confirmation(GtkWidget *file_chooser) {
 
     GtkWidget *popup_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_container_add(GTK_CONTAINER(popup_window), popup_vbox);
-    
+
     GtkWidget *content_label = gtk_label_new("Instructions:");
     gtk_box_pack_start(GTK_BOX(popup_vbox), content_label, FALSE, FALSE, 5);
 
-    // Check if the file is valid (could be replaced by your file list or validation logic)
+    // Validate file
     if (g_strcmp0(filename, "/home/mmhs2004/os_gui/Programs/Program_1.txt") == 0 ||
         g_strcmp0(filename, "/home/mmhs2004/os_gui/Programs/Program_2.txt") == 0 ||
         g_strcmp0(filename, "/home/mmhs2004/os_gui/Programs/Program_3.txt") == 0) {
@@ -872,19 +1012,16 @@ void handle_file_confirmation(GtkWidget *file_chooser) {
         FILE *file = fopen(filename, "r");
         if (file) {
             char line[256];
-            // Read the file and display its content in the popup
             while (fgets(line, sizeof(line), file)) {
                 GtkWidget *line_label = gtk_label_new(line);
                 gtk_box_pack_start(GTK_BOX(popup_vbox), line_label, FALSE, FALSE, 5);
             }
-            // Entry Field
-            GtkWidget *process_config_hbox = create_process_config_hbox(popup_window);
-            gtk_widget_set_valign(process_config_hbox, GTK_ALIGN_CENTER);
+            fclose(file);
 
-            // Pack the process config box before the button
+            // Create process config hbox with filename
+            GtkWidget *process_config_hbox = create_process_config_hbox(popup_window, filename);
+            gtk_widget_set_valign(process_config_hbox, GTK_ALIGN_CENTER);
             gtk_box_pack_start(GTK_BOX(popup_vbox), process_config_hbox, FALSE, FALSE, 0);
-            fclose(file);  // Close the file after reading
-             
         } else {
             GtkWidget *error_label = gtk_label_new("Error: Unable to open the selected file.");
             gtk_box_pack_start(GTK_BOX(popup_vbox), error_label, FALSE, FALSE, 5);
@@ -894,11 +1031,19 @@ void handle_file_confirmation(GtkWidget *file_chooser) {
         gtk_box_pack_start(GTK_BOX(popup_vbox), error_label, FALSE, FALSE, 5);
     }
 
-    
-    g_free(filename);  // Free the filename string
-
-    // Show the popup window
+    g_free(filename);
     gtk_widget_show_all(popup_window);
+}
+
+// Optional: Function to free process_list on application exit
+void free_process_list() {
+    for (GList *iter = process_list; iter != NULL; iter = iter->next) {
+        ProcessInfo *process = (ProcessInfo *)iter->data;
+        if (process->filename) g_free(process->filename);
+        g_free(process);
+    }
+    g_list_free(process_list);
+    process_list = NULL;
 }
 
 // This function shows the dialog for file selection
