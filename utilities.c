@@ -17,14 +17,6 @@ typedef struct
 } MemoryWord;
 
 
-struct program{
-    char programName[50];
-    int priority;
-    int arrivalTime;
-};
-
-
-
 typedef enum {
     NEW,
     READY,

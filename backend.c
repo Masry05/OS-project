@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <limits.h>
 #include <unistd.h>
+#include "program.h"
 #include "utilities.c"
 
 #define MAX_STRING_LENGTH 100
@@ -18,6 +19,8 @@
 int *programStartIndex = NULL;
 int Program_start_locations[3];
 
+extern program *programList;
+extern int total_processes;
 SCHEDULING_ALGORITHM algo;
 
 // initializnig global queues for simple access
@@ -39,40 +42,40 @@ bool Resources_availability[NUM_RESOURCES] = {true, true, true};
 
 MemoryWord memory[60];
 
-int count_txt_files(const char *directory_path)
-{
-    DIR *dir;
-    struct dirent *entry;
-    int count = 0;
-
-    dir = opendir(directory_path);
-    if (dir == NULL)
-    {
-        fprintf(stderr, "Failed to open directory: %s\n", directory_path);
-        return -1;
-    }
-
-    while ((entry = readdir(dir)) != NULL)
-    {
-        // Use stat to check if it's a regular file instead of d_type
-        char full_path[MAX_STRING_LENGTH];
-        struct stat st;
-
-        snprintf(full_path, MAX_STRING_LENGTH, "%s/%s", directory_path, entry->d_name);
-
-        if (stat(full_path, &st) == 0 && S_ISREG(st.st_mode))
-        {
-            const char *ext = strrchr(entry->d_name, '.');
-            if (ext && strcmp(ext, ".txt") == 0)
-            {
-                count++;
-            }
-        }
-    }
-
-    closedir(dir);
-    return count;
-}
+// int count_txt_files(const char *directory_path)
+// {
+//     DIR *dir;
+//     struct dirent *entry;
+//     int count = 0;
+//
+//     dir = opendir(directory_path);
+//     if (dir == NULL)
+//     {
+//         fprintf(stderr, "Failed to open directory: %s\n", directory_path);
+//         return -1;
+//     }
+//
+//     while ((entry = readdir(dir)) != NULL)
+//     {
+//         // Use stat to check if it's a regular file instead of d_type
+//         char full_path[MAX_STRING_LENGTH];
+//         struct stat st;
+//
+//         snprintf(full_path, MAX_STRING_LENGTH, "%s/%s", directory_path, entry->d_name);
+//
+//         if (stat(full_path, &st) == 0 && S_ISREG(st.st_mode))
+//         {
+//             const char *ext = strrchr(entry->d_name, '.');
+//             if (ext && strcmp(ext, ".txt") == 0)
+//             {
+//                 count++;
+//             }
+//         }
+//     }
+//
+//     closedir(dir);
+//     return count;
+// }
 
 int fillInstructions(const char *filename, int startIndex)
 {
@@ -107,16 +110,16 @@ int fillInstructions(const char *filename, int startIndex)
     return (startIndex + instructionNumber);
 }
 
-void PopulateMemory(struct program programList[], int no_of_files)
+void PopulateMemory()
 {
-    if (no_of_files == -1)
+    if (total_processes == -1)
     {
         fprintf(stderr, "Error counting files\n");
         return;
     }
-    programStartIndex = (int *)malloc(no_of_files * sizeof(int));
+    programStartIndex = (int *)malloc(total_processes * sizeof(int));
     int currentStartIndex = 0;
-    for (int i = 0; i < no_of_files; i++)
+    for (int i = 0; i < total_processes; i++)
     {
         programStartIndex[i] = currentStartIndex;
         strcpy(memory[programStartIndex[i]].name, "Process ID");
@@ -124,7 +127,7 @@ void PopulateMemory(struct program programList[], int no_of_files)
         strcpy(memory[programStartIndex[i] + 1].name, "Process Status");
         strcpy(memory[programStartIndex[i] + 1].value, "Ready"); // what are our statuses?
         strcpy(memory[programStartIndex[i] + 2].name, "Current Priority");
-        snprintf(memory[programStartIndex[i] + 2].value, MAX_STRING_LENGTH, "%d", programList[i].priority); // how do we get the current priority?
+        snprintf(memory[programStartIndex[i] + 2].value, MAX_STRING_LENGTH, "%d", 0); // how do we get the current priority?
         strcpy(memory[programStartIndex[i] + 3].name, "Program Counter");
         snprintf(memory[programStartIndex[i] + 3].value, MAX_STRING_LENGTH, "%d", programStartIndex[i] + 8);
         strcpy(memory[programStartIndex[i] + 4].name, "Memory Boundries");
@@ -620,13 +623,13 @@ MemQueue *get_blocking_queue(int program)
     // return NULL;          /* <<< and add a safe default here      */
 }
 
-void FCFS_algo(struct program programList[], int num_of_programs)
+void FCFS_algo()
 {
     int clockcycles = 0;
     int completed = 0;
-    while (completed < num_of_programs)
+    while (completed < total_processes)
     {
-        for (int i = 0; i < num_of_programs; i++)
+        for (int i = 0; i < total_processes; i++)
         {
 
             // checking if a program should be added into memory
@@ -649,7 +652,7 @@ void FCFS_algo(struct program programList[], int num_of_programs)
     }
 }
 
-void RR_algo(struct program programList[], int num_of_programs, int Quanta)
+void RR_algo(int Quanta)
 {
     int clockcycles = 0;
     // check arrivals first then move just executed process to back of queue
@@ -657,9 +660,9 @@ void RR_algo(struct program programList[], int num_of_programs, int Quanta)
     int completed = 0;
     int current_process = -1;
 
-    while (completed < num_of_programs)
+    while (completed < total_processes)
     {
-        for (int i = 0; i < num_of_programs; i++)
+        for (int i = 0; i < total_processes; i++)
         {
             // checking if a program should be added into memory
             if (programList[i].arrivalTime != -1 && clockcycles == programList[i].arrivalTime)
@@ -733,28 +736,33 @@ void RR_algo(struct program programList[], int num_of_programs, int Quanta)
     }
 }
 
-void MLFQ_algo(struct program programList[], int number_of_programs) {
+void MLFQ_algo()
+{
     const int num_levels = 4;
     // initialize the 4 ready–queues
-    for (int lvl = 0; lvl < num_levels; ++lvl) {
+    for (int lvl = 0; lvl < num_levels; ++lvl)
+    {
         initQueue(&MLFQ_queues_not_ptrs[lvl]);
         MLFQ_queues[lvl] = &MLFQ_queues_not_ptrs[lvl];
     }
     // timeslice for each level = 2^(lvl+1): Q0=2, Q1=4, Q2=8, Q3=16
     int quantum_per_level[num_levels];
-    for (int lvl = 0; lvl < num_levels; ++lvl){
+    for (int lvl = 0; lvl < num_levels; ++lvl)
+    {
         quantum_per_level[lvl] = 1 << lvl;
     }
     printf("\n");
     // per‐program MLFQ state
-    for (int p = 0; p < number_of_programs; ++p) {
-        curr_level[p]   = -1;
-        rem_quantum[p]  = 0;
+    for (int p = 0; p < total_processes; ++p)
+    {
+        curr_level[p] = -1;
+        rem_quantum[p] = 0;
     }
     int completed = 0;
     int clock = 0;
     int running = -1;
-    while (completed < number_of_programs) {
+    while (completed < total_processes)
+    {
         // —— first: unblock any processes just signaled ——
         // for (int r = 0; r < NUM_RESOURCES; ++r) {
         //     while (Resources_availability[r] && !isEmpty(BlockingQueues[r])) {
@@ -766,92 +774,110 @@ void MLFQ_algo(struct program programList[], int number_of_programs) {
         // }
         // —— arrivals ——
 
-        
-
-        for (int p = 0; p < number_of_programs; ++p) {
-            if (programList[p].arrivalTime == clock) {
-                enqueue( MLFQ_queues[0], atoi(memory[programStartIndex[p]].value), atoi(memory[programStartIndex[p] + 2].value));
+        for (int p = 0; p < total_processes; ++p)
+        {
+            if (programList[p].arrivalTime == clock)
+            {
+                enqueue(MLFQ_queues[0], atoi(memory[programStartIndex[p]].value), atoi(memory[programStartIndex[p] + 2].value));
                 programList[p].arrivalTime = -1;
-                curr_level[p]  = 0;
+                curr_level[p] = 0;
                 rem_quantum[p] = quantum_per_level[0];
                 printf("[C=%3d] ARRIVE → pid=%d in Q0\n", clock, p);
             }
         }
         // —— preempt if a higher‐priority queue is non‐empty ——
         int highest_ready = -1;
-        for (int lvl = 0; lvl < num_levels; ++lvl) {
-            if (!isEmpty(MLFQ_queues[lvl])) { 
+        for (int lvl = 0; lvl < num_levels; ++lvl)
+        {
+            if (!isEmpty(MLFQ_queues[lvl]))
+            {
                 running = peek(MLFQ_queues[lvl]);
-                 break; }
-        }
-        
-        // —— dispatch if CPU is free ——
-        if (running == -1) {
-            int sel_lvl = -1;
-            for (int lvl = 0; lvl < num_levels; ++lvl) {
-                if (!isEmpty(MLFQ_queues[lvl])) { 
-                    sel_lvl = lvl;
-                     break; }
+                break;
             }
-            if (sel_lvl != -1) {
+        }
+
+        // —— dispatch if CPU is free ——
+        if (running == -1)
+        {
+            int sel_lvl = -1;
+            for (int lvl = 0; lvl < num_levels; ++lvl)
+            {
+                if (!isEmpty(MLFQ_queues[lvl]))
+                {
+                    sel_lvl = lvl;
+                    break;
+                }
+            }
+            if (sel_lvl != -1)
+            {
                 running = peek(MLFQ_queues[sel_lvl]);
-                //running = atoi(running->arg1);
-                // ensure rem_quantum is set (for freshly arrived or demoted)
+                // running = atoi(running->arg1);
+                //  ensure rem_quantum is set (for freshly arrived or demoted)
                 if (rem_quantum[running] == 0)
                     rem_quantum[running] = quantum_per_level[sel_lvl];
                 curr_level[running] = sel_lvl;
-                printf("[C=%3d] DISPATCH → pid=%d from Q%d rem_q=%d\n",clock, running, sel_lvl, rem_quantum[running]);
+                printf("[C=%3d] DISPATCH → pid=%d from Q%d rem_q=%d\n", clock, running, sel_lvl, rem_quantum[running]);
             }
         }
-        //print all queues
+        // print all queues
 
         // —— execute one time unit ——
-        if (running != -1) {
+        if (running != -1)
+        {
             int lvl = curr_level[running];
             int pc = atoi(memory[programStartIndex[running] + 3].value);
             printf("trying    => Clock %2d: Running prog %d, PC=%d, instr='%s'\n", clock, running, pc, memory[pc].value);
-            if (can_execute_instruction(running)){
-                if ( executeInstruction(running)) {
+            if (can_execute_instruction(running))
+            {
+                if (executeInstruction(running))
+                {
                     dequeue(MLFQ_queues[lvl]);
                     printf("FINISHED → pid=%d (done=%d)\n", running, ++completed);
                     running = -1;
-                } else {
+                }
+                else
+                {
                     rem_quantum[running]--;
-                    if (rem_quantum[running] == 0) {
+                    if (rem_quantum[running] == 0)
+                    {
                         if (curr_level[running] < num_levels - 1)
                             curr_level[running]++;
                         rem_quantum[running] = quantum_per_level[curr_level[running]];
-                        printf("TIMESLICE→ pid=%d demote→Q%d rem_q=%d\n",running, curr_level[running], rem_quantum[running]);
+                        printf("TIMESLICE→ pid=%d demote→Q%d rem_q=%d\n", running, curr_level[running], rem_quantum[running]);
                         running = dequeue(MLFQ_queues[lvl]);
                         enqueue(MLFQ_queues[curr_level[running]], running, 0);
                         running = -1;
                     }
                 }
                 clock++;
-            }else{
+            }
+            else
+            {
                 // enqueue the process in the appropriate blocking queue
                 int tmp = dequeue(MLFQ_queues[lvl]);
                 enqueue(get_blocking_queue(running), tmp, atoi(memory[programStartIndex[tmp] + 2].value));
                 printf("BLOCKED  → pid=%d in Q%d\n", running, lvl);
                 running = -1;
-            } 
+            }
         }
-        //clock++;
-        // Print out the blocking queues
-        for (int r = 0; r < NUM_RESOURCES; ++r) {
+        // clock++;
+        //  Print out the blocking queues
+        for (int r = 0; r < NUM_RESOURCES; ++r)
+        {
             printf("Blocking Queue for Resource %d: ", r);
             printQueue(BlockingQueues[r], r);
         }
-        // Print out the ready queue      
-        for (int lvl = 0; lvl < num_levels; ++lvl) {
+        // Print out the ready queue
+        for (int lvl = 0; lvl < num_levels; ++lvl)
+        {
             printf("Q%d: ", lvl);
             printQueue(MLFQ_queues[lvl], lvl);
         }
     }
-    printf("[DONE] All %d progs done at clock %d\n", number_of_programs, clock);
+    printf("[DONE] All %d progs done at clock %d\n", total_processes, clock);
 }
 
-void scheduler(struct program programList[], int num_of_Programs)
+void scheduler()
 {
     // initialize ready queue, blocking queue, and running process
     struct MemoryWord *runningProcessLocation = NULL;
@@ -869,28 +895,28 @@ void scheduler(struct program programList[], int num_of_Programs)
     algo = MLFQ;
     int quanta = 2;
 
-    PopulateMemory(programList, num_of_Programs);
+    PopulateMemory();
     switch (algo)
     {
     case FCFS:
-        FCFS_algo(programList, num_of_Programs);
+        FCFS_algo();
         break;
     case RR:
-        RR_algo(programList, num_of_Programs, quanta);
+        RR_algo(quanta);
         break;
     case MLFQ:
-        MLFQ_algo(programList, num_of_Programs);
+        MLFQ_algo();
         break;
     }
 }
 
-int main()
-{
-    int num_of_programs = count_txt_files("./Programs");
-    struct program programList[3] = {
-        {"Program_1.txt", 0, 0},
-        {"Program_2.txt", 0, 0},
-        {"Program_3.txt", 0, 0}};
-    scheduler(programList, num_of_programs);
-    return 0;
-}
+// int main()
+// {
+//     int total_processes = count_txt_files("./Programs");
+//     struct program programList[3] = {
+//         {"Program_1.txt", 0, 0},
+//         {"Program_2.txt", 0, 0},
+//         {"Program_3.txt", 0, 0}};
+//     scheduler(programList, total_processes);
+//     return 0;
+// }
