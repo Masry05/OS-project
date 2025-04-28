@@ -1,5 +1,5 @@
 semWait userInput
-assign a input
+assign a daniel
 semSignal userInput
 semWait file
 assign b readFile a
