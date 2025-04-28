@@ -9,6 +9,7 @@
 #include "program.h"
 #include "utilities.c"
 
+
 #define MAX_STRING_LENGTH 100
 
 // Add DT_REG definition if not defined
@@ -21,7 +22,10 @@ int Program_start_locations[3];
 
 extern program *programList;
 extern int total_processes;
-SCHEDULING_ALGORITHM algo;
+extern int RR_quantum;
+extern SCHEDULING_ALGORITHM algo;
+
+extern 
 
 // initializnig global queues for simple access
 MemQueue readyQueueNotPtr;
@@ -41,6 +45,16 @@ int rem_quantum[MAX_PROGRAMS];
 bool Resources_availability[NUM_RESOURCES] = {true, true, true};
 
 MemoryWord memory[60];
+
+void print_program_array(const program *arr, int size)
+{
+    for (int i = 0; i < size; i++)
+    {
+        printf("Program %d:\n", i + 1);
+        printf("  Name: %s\n", arr[i].programName);
+        printf("  Arrival Time: %d\n", arr[i].arrivalTime);
+    }
+}
 
 // int count_txt_files(const char *directory_path)
 // {
@@ -551,7 +565,7 @@ bool executeInstruction(int program)
         printf("\n");
         Resources tmp = getResourceType(program);
         Resources_availability[tmp] = true;
-        printf("resource we are unblocking: %d\n", tmp);
+        // printf("resource we are unblocking: %d\n", tmp);
 
         if (algo != MLFQ)
         {
@@ -650,6 +664,8 @@ void FCFS_algo()
         }
         clockcycles++;
     }
+    printf("[DONE] All %d progs done at clock %d\n", total_processes, clockcycles);
+
 }
 
 void RR_algo(int Quanta)
@@ -734,6 +750,7 @@ void RR_algo(int Quanta)
             clockcycles++;
         }
     }
+    printf("[DONE] All %d progs done at clock %d\n", total_processes, clockcycles);
 }
 
 void MLFQ_algo()
@@ -880,6 +897,11 @@ void MLFQ_algo()
 void scheduler()
 {
     // initialize ready queue, blocking queue, and running process
+    print_program_array(programList, total_processes);
+    printf("total processes: %d\n", total_processes);
+    printf("RR quantum: %d\n", RR_quantum);
+    printf("Scheduling algorithm: %d\n", algo);
+
     struct MemoryWord *runningProcessLocation = NULL;
 
     initQueue(&readyQueueNotPtr);
@@ -891,10 +913,6 @@ void scheduler()
         BlockingQueues[i] = &BlockingQueuesNotPtrs[i];
     }
 
-    // setting the scheduling algorithm
-    algo = MLFQ;
-    int quanta = 2;
-
     PopulateMemory();
     switch (algo)
     {
@@ -902,7 +920,7 @@ void scheduler()
         FCFS_algo();
         break;
     case RR:
-        RR_algo(quanta);
+        RR_algo(RR_quantum);
         break;
     case MLFQ:
         MLFQ_algo();

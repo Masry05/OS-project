@@ -5,6 +5,6 @@ typedef struct
 {
     char programName[50];
     int arrivalTime;
-}program;
+} program;
 
 #endif

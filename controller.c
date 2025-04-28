@@ -4,10 +4,11 @@
 #include "gui.c"
 #include "backend.c"
 
-extern SCHEDULING_ALGORITHM algo;
 extern int RR_quantum;
 
-void auto_execution(GtkWidget *widget)
+SCHEDULING_ALGORITHM algo;
+
+void auto_execution(GtkWidget *widget, gpointer user_data)
 {
     g_print("Auto execution button clicked.\n");
     scheduler();
@@ -65,7 +66,6 @@ static void activate(GtkApplication *app, gpointer user_data)
     g_timeout_add(0, (GSourceFunc)gtk_widget_hide, quantum_button_box);
     gtk_widget_show_all(initial_window);
     g_signal_connect(dropdown, "changed", G_CALLBACK(set_scheduler), NULL);
-    g_signal_connect(G_OBJECT(auto_button), "clicked", G_CALLBACK(auto_execution), data);
 }
 
 int main(int argc, char *argv[])

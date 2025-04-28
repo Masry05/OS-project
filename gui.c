@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "program.h"
 #include <sys/stat.h>
+#include "shared_functions.h"
 
 #define MAX_STRING_LENGTH 100
 // Global Variables
@@ -76,15 +77,6 @@ void rr_scheduler();
 void mlfq_scheduler();
 
 char *filenames;
-void print_program_array(const program *arr, int size)
-{
-    for (int i = 0; i < size; i++)
-    {
-        printf("Program %d:\n", i + 1);
-        printf("  Name: %s\n", arr[i].programName);
-        printf("  Arrival Time: %d\n", arr[i].arrivalTime);
-    }
-}
 
 const char *get_filename_from_path(const char *path)
 {
@@ -459,6 +451,7 @@ GtkWidget *create_scheduler_vbox()
     // Auto Button
     auto_button = gtk_button_new_with_label("Auto Execution");
     gtk_box_pack_start(GTK_BOX(button_hbox), auto_button, TRUE, TRUE, 0);
+    g_signal_connect(G_OBJECT(auto_button), "clicked", G_CALLBACK(auto_execution), NULL);
 
     // Step Button
     step_button = gtk_button_new_with_label("Step");
@@ -548,7 +541,6 @@ void on_set_arrival_time_clicked(GtkButton *button, gpointer user_data)
             char *only_filename = get_filename_from_path(filename);
             programList[total_processes].arrivalTime = arrival_time;
             strcpy(programList[total_processes].programName, only_filename);
-            print_program_array(programList, total_processes + 1);
 
             // Increment total processes
             total_processes++;
@@ -680,6 +672,7 @@ void append_instruction_log(const gchar *instruction, const gchar *pid, const gc
     g_free(marked_instruction);
 }
 
+/*
 // Execution HBox
 GtkWidget *create_execution_hbox()
 {
@@ -692,7 +685,7 @@ GtkWidget *create_execution_hbox()
     gtk_box_pack_start(GTK_BOX(execution_hbox), auto_button, TRUE, TRUE, 0);
 
     return execution_hbox;
-}
+}*/
 // css
 void load_styles()
 {
@@ -1058,8 +1051,8 @@ static void setup_main_window(GtkWidget *window)
     gtk_frame_set_shadow_type(GTK_FRAME(execution_frame), GTK_SHADOW_IN);
     gtk_widget_set_size_request(execution_frame, -1, 50);
     gtk_box_pack_start(GTK_BOX(main_container), execution_frame, FALSE, FALSE, 0);
-    GtkWidget *execution_hbox = create_execution_hbox();
-    gtk_container_add(GTK_CONTAINER(execution_frame), execution_hbox);
+    // GtkWidget *execution_hbox = create_execution_hbox();
+    // gtk_container_add(GTK_CONTAINER(execution_frame), execution_hbox);
 
     // Update UI with process information
     if (label_total_procs_value && GTK_IS_LABEL(label_total_procs_value))
