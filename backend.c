@@ -9,7 +9,6 @@
 #include "program.h"
 #include "utilities.c"
 
-
 #define MAX_STRING_LENGTH 100
 
 // Add DT_REG definition if not defined
@@ -24,8 +23,6 @@ extern program *programList;
 extern int total_processes;
 extern int RR_quantum;
 extern SCHEDULING_ALGORITHM algo;
-
-extern 
 
 // initializnig global queues for simple access
 MemQueue readyQueueNotPtr;
@@ -665,7 +662,6 @@ void FCFS_algo()
         clockcycles++;
     }
     printf("[DONE] All %d progs done at clock %d\n", total_processes, clockcycles);
-
 }
 
 void RR_algo(int Quanta)
