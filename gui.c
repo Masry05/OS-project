@@ -16,6 +16,7 @@ double arrival_time = 0.0;     // Global variable to store arrival time
 gchar *last_user_input = NULL; // Global variable
 GtkApplication *application = NULL;
 program *programList;
+int *programs_arrival_list;
 GtkWidget *auto_button;
 GtkWidget *step_button;
 GtkWidget *reset_button;
@@ -51,6 +52,17 @@ typedef struct
     int num_data_columns;      // Fixed at 4
     int num_attributes;        // Number of attributes (e.g., 3 for PID, Instruction, Time)
 } DynamicQueueWidget;
+
+DynamicQueueWidget ready_queue;
+
+DynamicQueueWidget ready_queue_q1;
+DynamicQueueWidget ready_queue_q2;
+DynamicQueueWidget ready_queue_q3;
+DynamicQueueWidget ready_queue_rr;
+
+DynamicQueueWidget userinput_queue;
+DynamicQueueWidget useroutput_queue;
+DynamicQueueWidget file_queue;
 
 // New global data structure for process tracking
 typedef struct
@@ -124,6 +136,7 @@ int count_txt_files(const char *directory_path)
 
     closedir(dir);
     programList = malloc(count * sizeof(program));
+    programs_arrival_list = malloc(count * sizeof(int));
     return count;
 }
 
@@ -456,9 +469,13 @@ GtkWidget *create_scheduler_vbox()
     // Step Button
     step_button = gtk_button_new_with_label("Step");
     gtk_box_pack_start(GTK_BOX(button_hbox), step_button, TRUE, TRUE, 0);
+    g_signal_connect(G_OBJECT(step_button), "clicked", G_CALLBACK(step_execution), NULL);
+
     // Reset Button
     reset_button = gtk_button_new_with_label("Reset");
     gtk_box_pack_start(GTK_BOX(button_hbox), reset_button, TRUE, TRUE, 0);
+    g_signal_connect(G_OBJECT(reset_button), "clicked", G_CALLBACK(reset_execution), NULL);
+
     return button_hbox;
 }
 
@@ -540,6 +557,7 @@ void on_set_arrival_time_clicked(GtkButton *button, gpointer user_data)
             printf("Filename: %s\n", filename);
             char *only_filename = get_filename_from_path(filename);
             programList[total_processes].arrivalTime = arrival_time;
+            programs_arrival_list[total_processes] = arrival_time;
             strcpy(programList[total_processes].programName, only_filename);
 
             // Increment total processes
@@ -555,17 +573,17 @@ void on_set_arrival_time_clicked(GtkButton *button, gpointer user_data)
             process_list = g_list_append(process_list, process);
 
             // Add process to process_list_store (only if initialized)
-            if (process_list_store && GTK_IS_LIST_STORE(process_list_store))
-            {
-                gtk_list_store_insert_with_values(process_list_store, NULL, -1,
-                                                  0, g_strdup_printf("%d", process->pid),
-                                                  1, "Ready",
-                                                  2, "Normal",
-                                                  3, "TBD",
-                                                  4, "0",
-                                                  -1);
-            }
-
+            // if (process_list_store && GTK_IS_LIST_STORE(process_list_store))
+            // {
+            //     gtk_list_store_insert_with_values(process_list_store, NULL, -1,
+            //                                       0, g_strdup_printf("%d", process->pid),
+            //                                       1, "Ready",
+            //                                       2, "Normal",
+            //                                       3, "TBD",
+            //                                       4, "0",
+            //                                       -1);
+            // }
+            //
             // g_print("Process %d added with arrival time %.2f and file %s\n",
             //         process->pid, process->arrival_time, process->filename);
         }
@@ -809,9 +827,9 @@ GtkWidget *create_fcfs_dashboard()
 
     // Ready Queue
     const char *ready_headers[] = {"Process ID", "Instruction", "Time in Queue"};
-    DynamicQueueWidget ready_queue = create_dynamic_queue("Ready Queue", ready_headers, 3);
-    const char *ready_values[] = {"1", "Load", "5s"};
-    update_queue_process(&ready_queue, 0, ready_values);
+    ready_queue = create_dynamic_queue("Ready Queue", ready_headers, 3);
+    // const char *ready_values[] = {"1", "Load", "5s"};
+    // update_queue_process(&ready_queue, 0, ready_values);
     gtk_box_pack_start(GTK_BOX(hbox), ready_queue.container, TRUE, TRUE, 0);
 
     // Right side VBox for blocking queues
@@ -827,17 +845,17 @@ GtkWidget *create_fcfs_dashboard()
     const char *file_values[] = {"4", "File Read", "4s"};
 
     // User Input Blocking Queue
-    DynamicQueueWidget userinput_queue = create_dynamic_queue("User Input Blocking Queue", blocking_headers, 3);
+    userinput_queue = create_dynamic_queue("User Input Blocking Queue", blocking_headers, 3);
     update_queue_process(&userinput_queue, 0, userinput_values);
     gtk_box_pack_start(GTK_BOX(blocking_vbox), userinput_queue.container, TRUE, TRUE, 0);
 
     // User Output Blocking Queue
-    DynamicQueueWidget useroutput_queue = create_dynamic_queue("User Output Blocking Queue", blocking_headers, 3);
+    useroutput_queue = create_dynamic_queue("User Output Blocking Queue", blocking_headers, 3);
     update_queue_process(&useroutput_queue, 0, useroutput_values);
     gtk_box_pack_start(GTK_BOX(blocking_vbox), useroutput_queue.container, TRUE, TRUE, 0);
 
     // File Blocking Queue
-    DynamicQueueWidget file_queue = create_dynamic_queue("File Blocking Queue", blocking_headers, 3);
+    file_queue = create_dynamic_queue("File Blocking Queue", blocking_headers, 3);
     update_queue_process(&file_queue, 0, file_values);
     gtk_box_pack_start(GTK_BOX(blocking_vbox), file_queue.container, TRUE, TRUE, 0);
 
@@ -864,9 +882,9 @@ GtkWidget *create_rr_dashboard()
 
     // Ready Queue
     const char *ready_headers[] = {"Process ID", "Instruction", "Time in Queue"};
-    const char *ready_values[] = {"1", "Load", "5s"};
-    DynamicQueueWidget ready_queue = create_dynamic_queue("Ready Queue", ready_headers, 3);
-    update_queue_process(&ready_queue, 0, ready_values);
+    //const char *ready_values[] = {"1", "Load", "5s"};
+    ready_queue = create_dynamic_queue("Ready Queue", ready_headers, 3);
+    //update_queue_process(&ready_queue, 0, ready_values);
     gtk_box_pack_start(GTK_BOX(hbox), ready_queue.container, TRUE, TRUE, 0);
 
     // Right side VBox for blocking queues
@@ -877,23 +895,23 @@ GtkWidget *create_rr_dashboard()
     const char *blocking_headers[] = {"Process ID", "Instruction", "Time in Queue"};
 
     // Dummy data for blocking queues
-    const char *userinput_values[] = {"2", "Input", "3s"};
-    const char *useroutput_values[] = {"3", "Output", "2s"};
-    const char *file_values[] = {"4", "File Read", "4s"};
+    // const char *userinput_values[] = {"2", "Input", "3s"};
+    // const char *useroutput_values[] = {"3", "Output", "2s"};
+    // const char *file_values[] = {"4", "File Read", "4s"};
 
     // User Input Blocking Queue
     DynamicQueueWidget userinput_queue = create_dynamic_queue("User Input Blocking Queue", blocking_headers, 3);
-    update_queue_process(&userinput_queue, 0, userinput_values);
+    //update_queue_process(&userinput_queue, 0, userinput_values);
     gtk_box_pack_start(GTK_BOX(blocking_vbox), userinput_queue.container, TRUE, TRUE, 0);
 
     // User Output Blocking Queue
     DynamicQueueWidget useroutput_queue = create_dynamic_queue("User Output Blocking Queue", blocking_headers, 3);
-    update_queue_process(&useroutput_queue, 0, useroutput_values);
+    //update_queue_process(&useroutput_queue, 0, useroutput_values);
     gtk_box_pack_start(GTK_BOX(blocking_vbox), useroutput_queue.container, TRUE, TRUE, 0);
 
     // File Blocking Queue
     DynamicQueueWidget file_queue = create_dynamic_queue("File Blocking Queue", blocking_headers, 3);
-    update_queue_process(&file_queue, 0, file_values);
+    //update_queue_process(&file_queue, 0, file_values);
     gtk_box_pack_start(GTK_BOX(blocking_vbox), file_queue.container, TRUE, TRUE, 0);
 
     return dashboard_vbox;
@@ -921,18 +939,18 @@ GtkWidget *create_mlfq_dashboard()
     // Ready Queues (Q=1, Q=2, Q=4)
     const char *ready_headers[] = {"Process ID", "Instruction", "Time in Queue"};
 
-    DynamicQueueWidget ready_queue_q1 = create_dynamic_queue("Ready Queue (Q=1)", ready_headers, 3);
+    ready_queue_q1 = create_dynamic_queue("Ready Queue (Q=1)", ready_headers, 3);
     gtk_box_pack_start(GTK_BOX(ready_queue_vbox), ready_queue_q1.container, TRUE, TRUE, 0);
 
-    DynamicQueueWidget ready_queue_q2 = create_dynamic_queue("Ready Queue (Q=2)", ready_headers, 3);
+    ready_queue_q2 = create_dynamic_queue("Ready Queue (Q=2)", ready_headers, 3);
     // No initial values for Q=2
     gtk_box_pack_start(GTK_BOX(ready_queue_vbox), ready_queue_q2.container, TRUE, TRUE, 0);
 
-    DynamicQueueWidget ready_queue_q3 = create_dynamic_queue("Ready Queue (Q=4)", ready_headers, 3);
+    ready_queue_q3 = create_dynamic_queue("Ready Queue (Q=4)", ready_headers, 3);
     // No initial values for Q=4
     gtk_box_pack_start(GTK_BOX(ready_queue_vbox), ready_queue_q3.container, TRUE, TRUE, 0);
 
-    DynamicQueueWidget ready_queue_rr = create_dynamic_queue("Ready Queue (Round Robin)", ready_headers, 3);
+    ready_queue_rr = create_dynamic_queue("Ready Queue (Round Robin)", ready_headers, 3);
     gtk_box_pack_start(GTK_BOX(ready_queue_vbox), ready_queue_rr.container, TRUE, TRUE, 0);
     gtk_box_pack_start(GTK_BOX(hbox), ready_queue_vbox, TRUE, TRUE, 0);
 
@@ -1067,33 +1085,24 @@ static void setup_main_window(GtkWidget *window)
     }
 
     // Populate process_list_store with any processes added in the initial window
-    if (process_list_store && GTK_IS_LIST_STORE(process_list_store))
-    {
-        for (GList *iter = process_list; iter != NULL; iter = iter->next)
-        {
-            ProcessInfo *process = (ProcessInfo *)iter->data;
-            gtk_list_store_insert_with_values(process_list_store, NULL, -1,
-                                              0, g_strdup_printf("%d", process->pid),
-                                              1, "Ready",
-                                              2, "Normal",
-                                              3, "TBD",
-                                              4, "0",
-                                              -1);
-        }
-    }
-    else
-    {
-        g_warning("process_list_store is not a valid GtkListStore");
-    }
-
-    // Sample data (optional, remove if not needed)
-    gtk_list_store_insert_with_values(process_list_store, NULL, -1,
-                                      0, "1",
-                                      1, "Running",
-                                      2, "High",
-                                      3, "0-100",
-                                      4, "500",
-                                      -1);
+    // if (process_list_store && GTK_IS_LIST_STORE(process_list_store))
+    // {
+    //     for (GList *iter = process_list; iter != NULL; iter = iter->next)
+    //     {
+    //         ProcessInfo *process = (ProcessInfo *)iter->data;
+    //         gtk_list_store_insert_with_values(process_list_store, NULL, -1,
+    //                                           0, g_strdup_printf("%d", process->pid),
+    //                                           1, "Ready",
+    //                                           2, "Normal",
+    //                                           3, "TBD",
+    //                                           4, "0",
+    //                                           -1);
+    //     }
+    // }
+    // else
+    // {
+    //     g_warning("process_list_store is not a valid GtkListStore");
+    // }
 
     gtk_list_store_insert_with_values(mutex_status_store, NULL, -1,
                                       0, "Mutex1",
@@ -1154,6 +1163,7 @@ void on_simulate_clicked(GtkButton *button, gpointer user_data)
     // Create and show main window
     main_window = gtk_application_window_new(application);
     setup_main_window(main_window); // We'll modify your existing activate code
+    intialize_dashboard();
 }
 
 // This function will handle the file confirmation and display contents in a new popup window

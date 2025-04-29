@@ -6,15 +6,16 @@
             "type": "shell",
             "command": "gcc",
             "args": [
-                "gui.c",
                 "controller.c",
                 "backend.c",
+                "gui.c",
                 "-o",
-                "OSProject",
+                "controller",
                 "`pkg-config",
                 "--cflags",
                 "--libs",
-                "gtk+-3.0`"
+                "gtk+-3.0`",
+                "-g" // Enable debugging symbols
             ],
             "group": {
                 "kind": "build",
@@ -22,7 +23,8 @@
             },
             "problemMatcher": [
                 "$gcc"
-            ]
+            ],
+            "detail": "Build the OS Project with debugging enabled"
         }
     ]
 }
