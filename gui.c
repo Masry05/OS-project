@@ -493,13 +493,6 @@ GtkWidget *create_resource_vbox()
 
     return resource_vbox;
 }
-// Memory Viewer
-GtkWidget *create_memory_viewer()
-{
-    const gchar *memory_viewer_columns[] = {"Memory Address", "Data/Instruction"};
-    GtkWidget *memory_viewer = create_labeled_treeview("Memory Viewer", memory_viewer_columns, 2, &memory_viewer_store);
-    return memory_viewer;
-}
 
 // Log & Console Panel
 GtkWidget *create_log_console_panel()
@@ -525,7 +518,8 @@ GtkWidget *create_memory_log_hbox()
     gtk_container_set_border_width(GTK_CONTAINER(memory_log_hbox), 10); // Inner padding for nicer look
 
     // Memory Viewer
-    GtkWidget *memory_viewer = create_memory_viewer();
+    const gchar *memory_viewer_columns[] = {"Memory Address", "Data/Instruction"};
+    GtkWidget *memory_viewer = create_labeled_treeview("Memory Viewer", memory_viewer_columns, 2, &memory_viewer_store);
     gtk_box_pack_start(GTK_BOX(memory_log_hbox), memory_viewer, TRUE, TRUE, 0);
 
     // Log & Console Panel
@@ -882,9 +876,9 @@ GtkWidget *create_rr_dashboard()
 
     // Ready Queue
     const char *ready_headers[] = {"Process ID", "Instruction", "Time in Queue"};
-    //const char *ready_values[] = {"1", "Load", "5s"};
+    // const char *ready_values[] = {"1", "Load", "5s"};
     ready_queue = create_dynamic_queue("Ready Queue", ready_headers, 3);
-    //update_queue_process(&ready_queue, 0, ready_values);
+    // update_queue_process(&ready_queue, 0, ready_values);
     gtk_box_pack_start(GTK_BOX(hbox), ready_queue.container, TRUE, TRUE, 0);
 
     // Right side VBox for blocking queues
@@ -900,18 +894,18 @@ GtkWidget *create_rr_dashboard()
     // const char *file_values[] = {"4", "File Read", "4s"};
 
     // User Input Blocking Queue
-    DynamicQueueWidget userinput_queue = create_dynamic_queue("User Input Blocking Queue", blocking_headers, 3);
-    //update_queue_process(&userinput_queue, 0, userinput_values);
+    userinput_queue = create_dynamic_queue("User Input Blocking Queue", blocking_headers, 3);
+    // update_queue_process(&userinput_queue, 0, userinput_values);
     gtk_box_pack_start(GTK_BOX(blocking_vbox), userinput_queue.container, TRUE, TRUE, 0);
 
     // User Output Blocking Queue
-    DynamicQueueWidget useroutput_queue = create_dynamic_queue("User Output Blocking Queue", blocking_headers, 3);
-    //update_queue_process(&useroutput_queue, 0, useroutput_values);
+    useroutput_queue = create_dynamic_queue("User Output Blocking Queue", blocking_headers, 3);
+    // update_queue_process(&useroutput_queue, 0, useroutput_values);
     gtk_box_pack_start(GTK_BOX(blocking_vbox), useroutput_queue.container, TRUE, TRUE, 0);
 
     // File Blocking Queue
-    DynamicQueueWidget file_queue = create_dynamic_queue("File Blocking Queue", blocking_headers, 3);
-    //update_queue_process(&file_queue, 0, file_values);
+    file_queue = create_dynamic_queue("File Blocking Queue", blocking_headers, 3);
+    // update_queue_process(&file_queue, 0, file_values);
     gtk_box_pack_start(GTK_BOX(blocking_vbox), file_queue.container, TRUE, TRUE, 0);
 
     return dashboard_vbox;
@@ -961,15 +955,15 @@ GtkWidget *create_mlfq_dashboard()
     const char *blocking_headers[] = {"Process ID", "Instruction", "Time in Queue"};
 
     // User Input Blocking Queue
-    DynamicQueueWidget userinput_queue = create_dynamic_queue("User Input Blocking Queue", blocking_headers, 3);
+    userinput_queue = create_dynamic_queue("User Input Blocking Queue", blocking_headers, 3);
     gtk_box_pack_start(GTK_BOX(blocking_vbox), userinput_queue.container, TRUE, TRUE, 0);
 
     // User Output Blocking Queue
-    DynamicQueueWidget useroutput_queue = create_dynamic_queue("User Output Blocking Queue", blocking_headers, 3);
+    useroutput_queue = create_dynamic_queue("User Output Blocking Queue", blocking_headers, 3);
     gtk_box_pack_start(GTK_BOX(blocking_vbox), useroutput_queue.container, TRUE, TRUE, 0);
 
     // File Blocking Queue
-    DynamicQueueWidget file_queue = create_dynamic_queue("File Blocking Queue", blocking_headers, 3);
+    file_queue = create_dynamic_queue("File Blocking Queue", blocking_headers, 3);
     gtk_box_pack_start(GTK_BOX(blocking_vbox), file_queue.container, TRUE, TRUE, 0);
 
     // Pack blocking_vbox on the right side of hbox
@@ -1109,18 +1103,6 @@ static void setup_main_window(GtkWidget *window)
                                       1, "8",
                                       2, "9",
                                       -1);
-
-    for (int i = 0; i < 60; i++)
-    {
-        GtkTreeIter iter;
-        gchar *address_str = g_strdup_printf("0x%04X", i);
-        gtk_list_store_append(memory_viewer_store, &iter);
-        gtk_list_store_set(memory_viewer_store, &iter,
-                           0, address_str,
-                           1, "",
-                           -1);
-        g_free(address_str);
-    }
 
     append_instruction_log("LOAD R1, A", "P1", "Acquired user quantum_input");
     append_instruction_log("ADD R2, R1", "P2", "Waiting for file");

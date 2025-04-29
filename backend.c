@@ -177,6 +177,7 @@ void PopulateMemory()
             return;
         }
     }
+    printf("completed population\n");
 }
 
 void PrintMemory()
@@ -751,6 +752,11 @@ void RR_algo()
                 }
                 clockcycles++;
                 printQueue(readyQueue, -1);
+                for (size_t i = 0; i < 3; i++)
+                {
+                    printf("Blocking %d=> ", i);
+                    printQueue(BlockingQueues[i], -1);
+                }
                 update();
                 if (stepper)
                 {
@@ -773,6 +779,12 @@ void RR_algo()
         {
             clockcycles++;
             printQueue(readyQueue, -1);
+            for (size_t i = 0; i < 3; i++)
+            {
+                printf("Blocking %d=> ", i);
+                printQueue(BlockingQueues[i], -1);
+            }
+
             update();
             if (stepper)
             {
@@ -796,11 +808,7 @@ void MLFQ_algo()
     // initialize the 4 ready–queues
     if (!alreadyRunning)
     {
-        for (int lvl = 0; lvl < num_levels; ++lvl)
-        {
-            initQueue(&MLFQ_queues_not_ptrs[lvl]);
-            MLFQ_queues[lvl] = &MLFQ_queues_not_ptrs[lvl];
-        }
+        printf("Initializing MLFQs...\n");
         // timeslice for each level = 2^(lvl+1): Q0=2, Q1=4, Q2=8, Q3=16
         for (int lvl = 0; lvl < num_levels; ++lvl)
         {
@@ -813,7 +821,7 @@ void MLFQ_algo()
         }
     }
 
-    printf("\n");
+    printf("initialized MLFQs \n");
     // per‐program MLFQ state
     while (completed < total_processes)
     {
@@ -961,7 +969,14 @@ void scheduler()
             BlockingQueues[i] = &BlockingQueuesNotPtrs[i];
         }
 
+        for (size_t i = 0; i < NUM_RESOURCES; i++)
+        {
+            initQueue(&MLFQ_queues_not_ptrs[i]);
+            MLFQ_queues[i] = &MLFQ_queues_not_ptrs[i];
+        }
+
         PopulateMemory();
+        printf("Memory populated in scheduler\n");
     }
     switch (algo)
     {

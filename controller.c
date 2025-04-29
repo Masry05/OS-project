@@ -13,7 +13,7 @@ bool alreadyRunning;
 
 void update_pcb()
 {
-    // printf("Updating PCB\n");
+    printf("Updating PCB\n");
 
     // Clear the process_list_store before updating it
     if (process_list_store && GTK_IS_LIST_STORE(process_list_store))
@@ -36,11 +36,11 @@ void update_pcb()
                                           4, memory[programStartIndex[i] + 3].value,
                                           -1);
     }
+    printf("completed pcb update\n");
 }
 
 void update_queue(MemQueue readyQueue, DynamicQueueWidget ready_queue)
 {
-    // free_dynamic_queue(&ready_queue);
     for (int i = 0; i < total_processes + 1; i++)
     {
         for (int j = 0; j < 3; j++)
@@ -72,6 +72,34 @@ void update_queue(MemQueue readyQueue, DynamicQueueWidget ready_queue)
             update_queue_process(&ready_queue, i, ready_values);
         }
     }
+    printf("after2\n");
+}
+
+update_memory()
+{
+    printf("Updating memory\n");
+    for (int i = 0; i < 60; i++)
+    {
+        GtkTreeIter iter;
+        gchar *address_str = g_strdup_printf("0x%04X", i);
+        bool empty = true;
+        char mul_values[MAX_STRING_LENGTH];
+
+        if (strcmp(memory[i].value2, "") != 0)
+        {
+            strcpy(mul_values, memory[programStartIndex[i] + 4].value);
+            strcat(mul_values, ":");
+            strcat(mul_values, memory[programStartIndex[i] + 4].value2);
+            empty = false;
+        }
+        gtk_list_store_append(memory_viewer_store, &iter);
+        gtk_list_store_set(memory_viewer_store, &iter,
+                           0, address_str,
+                           1, empty ? memory[i].value : mul_values,
+                           -1);
+        g_free(address_str);
+    }
+    printf("completed memory update\n");
 }
 
 void update()
@@ -87,24 +115,31 @@ void update()
     update_pcb();
 
     // updating ready queue
-    update_queue((*readyQueue), ready_queue);
+    if (algo != 2)
+        update_queue(*readyQueue, ready_queue);
+    else
+    {
+        update_queue(MLFQ_queues_not_ptrs[0], ready_queue_q1);
+        update_queue(MLFQ_queues_not_ptrs[1], ready_queue_q2);
+        update_queue(MLFQ_queues_not_ptrs[2], ready_queue_q3);
+        update_queue(MLFQ_queues_not_ptrs[3], ready_queue_rr);
+    }
     // // updating blocking queues
-    // update_queue(&BlockingQueuesNotPtrs[0], file_queue);
-    // update_queue(BlockingQueuesNotPtrs[1], userinput_queue);
-    // update_queue(BlockingQueuesNotPtrs[2], useroutput_queue);
+
+    update_queue(BlockingQueuesNotPtrs[0], file_queue);
+    update_queue(BlockingQueuesNotPtrs[1], userinput_queue);
+    update_queue(BlockingQueuesNotPtrs[2], useroutput_queue);
 
     // // // updating memory viewer
-    // update_queue(*MLFQ_queues[0], ready_queue_q1);
-    // update_queue(*MLFQ_queues[1], ready_queue_q2);
-    // update_queue(*MLFQ_queues[2], ready_queue_q3);
-    // update_queue(*MLFQ_queues[3], ready_queue_rr);
+
+    update_memory();
 }
 
 void intialize_dashboard()
 {
     PopulateMemory();
     update_pcb();
-    // updating ready queue
+    update_memory();
 }
 
 void auto_execution(GtkWidget *widget, gpointer user_data)
