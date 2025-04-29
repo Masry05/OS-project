@@ -681,7 +681,7 @@ void FCFS_algo()
         }
     }
 
-    printf("[DONE] All %d progs done Clock %d\n", total_processes, clockcycles);
+    printf("[DONE] All %d progs done clockcycles %d\n", total_processes, clockcycles);
 }
 
 void RR_algo()
@@ -724,15 +724,15 @@ void RR_algo()
             // check if we can execute instruction and if so then we execute
             // dumpMemory(Memory_start_location);
             // int pc =  atoi(peek(readyQueue)[3].arg1)+8;
-            // printf("trying    =>Clock %2d: Running prog %d, PC=%d, instr='%s'\n",clockcycles, atoi(peek(readyQueue)[0].arg1) ,pc,peek(readyQueue)[pc].identifier );
+            // printf("trying    =>clockcycles %2d: Running prog %d, PC=%d, instr='%s'\n",clockcycles, atoi(peek(readyQueue)[0].arg1) ,pc,peek(readyQueue)[pc].identifier );
             int pc = atoi(memory[programStartIndex[current_process] + 3].value);
-            printf("trying    =>Clock %2d: Running prog %d, PC=%d, instr='%s'\n", clockcycles, current_process, pc, memory[pc].value);
+            printf("trying    =>clockcycles %2d: Running prog %d, PC=%d, instr='%s'\n", clockcycles, current_process, pc, memory[pc].value);
             // Print out the ready queue
 
             if (can_execute_instruction(current_process))
             {
                 int pc = atoi(memory[programStartIndex[current_process] + 3].value);
-                printf("executing =>Clock %2d: Running prog %d, PC=%d, instr='%s'\n", clockcycles, current_process, pc, memory[pc].value);
+                printf("executing =>clockcycles %2d: Running prog %d, PC=%d, instr='%s'\n", clockcycles, current_process, pc, memory[pc].value);
                 // executing the instruction, will ready the corresponding blocked processes in case of semSignal
                 if (executeInstruction(current_process))
                 {
@@ -796,33 +796,30 @@ void RR_algo()
             }
         }
     }
-    printf("[DONE] All %d progs done Clock %d\n", total_processes, clockcycles);
+    printf("[DONE] All %d progs done clockcycles %d\n", total_processes, clockcycles);
 }
-
 void MLFQ_algo()
 {
     const int num_levels = 4;
-    static int quantum_per_level[4];
     static int running = -1;
-
-    // initialize the 4 ready–queues
+    static int quantum_per_level[4];
     if (!alreadyRunning)
     {
-        printf("Initializing MLFQs...\n");
         // timeslice for each level = 2^(lvl+1): Q0=2, Q1=4, Q2=8, Q3=16
         for (int lvl = 0; lvl < num_levels; ++lvl)
         {
             quantum_per_level[lvl] = 1 << lvl;
         }
+        printf("\n");
+        // per‐program MLFQ state
         for (int p = 0; p < total_processes; ++p)
         {
             curr_level[p] = -1;
             rem_quantum[p] = 0;
         }
+        alreadyRunning = true;
     }
 
-    printf("initialized MLFQs \n");
-    // per‐program MLFQ state
     while (completed < total_processes)
     {
         // —— first: unblock any processes just signaled ——
@@ -888,7 +885,7 @@ void MLFQ_algo()
         {
             int lvl = curr_level[running];
             int pc = atoi(memory[programStartIndex[running] + 3].value);
-            printf("trying    => Clock %2d: Running prog %d, PC=%d, instr='%s'\n", clockcycles, running, pc, memory[pc].value);
+            printf("trying    => clockcycles %2d: Running prog %d, PC=%d, instr='%s'\n", clockcycles, running, pc, memory[pc].value);
             if (can_execute_instruction(running))
             {
                 if (executeInstruction(running))
@@ -933,21 +930,20 @@ void MLFQ_algo()
         }
         // clockcycles++;
         //  Print out the blocking queues
-        // for (int r = 0; r < NUM_RESOURCES; ++r)
-        // {
-        //     printf("Blocking Queue for Resource %d: ", r);
-        //     printQueue(BlockingQueues[r], r);
-        // }
-        // // Print out the ready queue
-        // for (int lvl = 0; lvl < num_levels; ++lvl)
-        // {
-        //     printf("Q%d: ", lvl);
-        //     printQueue(MLFQ_queues[lvl], lvl);
-        // }
+        for (int r = 0; r < NUM_RESOURCES; ++r)
+        {
+            printf("Blocking Queue for Resource %d: ", r);
+            printQueue(BlockingQueues[r], r);
+        }
+        // Print out the ready queue
+        for (int lvl = 0; lvl < num_levels; ++lvl)
+        {
+            printf("Q%d: ", lvl);
+            printQueue(MLFQ_queues[lvl], lvl);
+        }
     }
-    printf("[DONE] All %d progs done at Clock %d\n", total_processes, clockcycles);
+    printf("[DONE] All %d progs done at clockcycles %d\n", total_processes, clockcycles);
 }
-
 void scheduler()
 {
     // initialize ready queue, blocking queue, and running process
@@ -969,10 +965,12 @@ void scheduler()
             BlockingQueues[i] = &BlockingQueuesNotPtrs[i];
         }
 
-        for (size_t i = 0; i < NUM_RESOURCES; i++)
+        const int num_levels = 4;
+        // initialize the 4 ready–queues
+        for (int lvl = 0; lvl < num_levels; ++lvl)
         {
-            initQueue(&MLFQ_queues_not_ptrs[i]);
-            MLFQ_queues[i] = &MLFQ_queues_not_ptrs[i];
+            initQueue(&MLFQ_queues_not_ptrs[lvl]);
+            MLFQ_queues[lvl] = &MLFQ_queues_not_ptrs[lvl];
         }
 
         PopulateMemory();

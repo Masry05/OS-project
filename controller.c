@@ -41,6 +41,7 @@ void update_pcb()
 
 void update_queue(MemQueue readyQueue, DynamicQueueWidget ready_queue)
 {
+    printf("Before\n");
     for (int i = 0; i < total_processes + 1; i++)
     {
         for (int j = 0; j < 3; j++)
@@ -49,6 +50,7 @@ void update_queue(MemQueue readyQueue, DynamicQueueWidget ready_queue)
             gtk_label_set_text(GTK_LABEL(ready_queue.value_labels[i][j]), value);
         }
     }
+    printf("after1\n");
 
     if ((&readyQueue) != NULL && (&readyQueue)->size > 0)
     {
@@ -84,7 +86,7 @@ update_memory()
         gchar *address_str = g_strdup_printf("0x%04X", i);
         bool empty = true;
         char mul_values[MAX_STRING_LENGTH];
-
+        printf("address: %s\n", memory[i].name);
         if (strcmp(memory[i].value2, "") != 0)
         {
             strcpy(mul_values, memory[programStartIndex[i] + 4].value);
