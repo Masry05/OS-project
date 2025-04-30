@@ -669,7 +669,7 @@ void FCFS_algo()
             }
         }
         clockcycles++;
-        printQueue(readyQueue, -1);
+        //printQueue(readyQueue, -1);
         update();
         if (stepper)
         {
@@ -751,12 +751,12 @@ void RR_algo()
                     }
                 }
                 clockcycles++;
-                printQueue(readyQueue, -1);
-                for (size_t i = 0; i < 3; i++)
-                {
-                    printf("Blocking %d=> ", i);
-                    printQueue(BlockingQueues[i], -1);
-                }
+                // printQueue(readyQueue, -1);
+                // for (size_t i = 0; i < 3; i++)
+                // {
+                //     printf("Blocking %d=> ", i);
+                //     printQueue(BlockingQueues[i], -1);
+                // }
                 update();
                 if (stepper)
                 {
@@ -778,13 +778,12 @@ void RR_algo()
         else
         {
             clockcycles++;
-            printQueue(readyQueue, -1);
-            for (size_t i = 0; i < 3; i++)
-            {
-                printf("Blocking %d=> ", i);
-                printQueue(BlockingQueues[i], -1);
-            }
-
+            // printQueue(readyQueue, -1);
+            // for (size_t i = 0; i < 3; i++)
+            // {
+            //     printf("Blocking %d=> ", i);
+            //     printQueue(BlockingQueues[i], -1);
+            // }
             update();
             if (stepper)
             {

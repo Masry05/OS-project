@@ -41,7 +41,7 @@ void update_pcb()
 
 void update_queue(MemQueue readyQueue, DynamicQueueWidget ready_queue)
 {
-    printf("Before\n");
+    //printf("Before\n");
     for (int i = 0; i < total_processes + 1; i++)
     {
         for (int j = 0; j < 3; j++)
@@ -50,7 +50,7 @@ void update_queue(MemQueue readyQueue, DynamicQueueWidget ready_queue)
             gtk_label_set_text(GTK_LABEL(ready_queue.value_labels[i][j]), value);
         }
     }
-    printf("after1\n");
+    //printf("after1\n");
 
     if ((&readyQueue) != NULL && (&readyQueue)->size > 0)
     {
@@ -74,24 +74,24 @@ void update_queue(MemQueue readyQueue, DynamicQueueWidget ready_queue)
             update_queue_process(&ready_queue, i, ready_values);
         }
     }
-    printf("after2\n");
+    //printf("after2\n");
 }
 
 update_memory()
 {
     printf("Updating memory\n");
+    gtk_list_store_clear(memory_viewer_store);
     for (int i = 0; i < 60; i++)
     {
         GtkTreeIter iter;
         gchar *address_str = g_strdup_printf("0x%04X", i);
         bool empty = true;
         char mul_values[MAX_STRING_LENGTH];
-        printf("address: %s\n", memory[i].name);
-        if (strcmp(memory[i].value2, "") != 0)
+        if (memory[i].value2[0] != '\0')
         {
-            strcpy(mul_values, memory[programStartIndex[i] + 4].value);
+            strcpy(mul_values, memory[i].value);
             strcat(mul_values, ":");
-            strcat(mul_values, memory[programStartIndex[i] + 4].value2);
+            strcat(mul_values, memory[i].value2);
             empty = false;
         }
         gtk_list_store_append(memory_viewer_store, &iter);
@@ -126,13 +126,13 @@ void update()
         update_queue(MLFQ_queues_not_ptrs[2], ready_queue_q3);
         update_queue(MLFQ_queues_not_ptrs[3], ready_queue_rr);
     }
-    // // updating blocking queues
+    // updating blocking queues
 
     update_queue(BlockingQueuesNotPtrs[0], file_queue);
     update_queue(BlockingQueuesNotPtrs[1], userinput_queue);
     update_queue(BlockingQueuesNotPtrs[2], useroutput_queue);
 
-    // // // updating memory viewer
+    // updating memory viewer
 
     update_memory();
 }
@@ -164,6 +164,7 @@ void reset_execution(GtkWidget *widget, gpointer user_data)
     stepper = false;
     alreadyRunning = false;
     reset_all();
+    update();
 }
 
 void set_scheduler(GtkWidget *widget)
