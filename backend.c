@@ -275,7 +275,9 @@ void assign(int program, const char *varName, const char *value)
     if (strcmp(value, "input") == 0)
     {
         printf("Please enter a value \n");
-        scanf("%s", value);
+        // scanf("%s", value);
+        value = assignInput();
+        printf("Thanks for your value\n");
     }
     int startIndex = programStartIndex[program];
     for (int i = startIndex + 5; i < startIndex + 8 && !stored; i++)
@@ -436,11 +438,19 @@ void printFromTo(int program, const char *var1, const char *var2)
         startNum = endNum;
         endNum = temp;
     }
+
+    char result[MAX_STRING_LENGTH * 10] = ""; // Initialize an empty string to store the result
+
     for (int i = startNum; i <= endNum; i++)
     {
-        printf("%d ", i);
+        char temp[10];                          // Temporary buffer to hold the current number as a string
+        snprintf(temp, sizeof(temp), "%d ", i); // Convert the number to a string with a space
+        strcat(result, temp);                   // Concatenate the current number to the result string
     }
-    printf("\n");
+
+    // After the loop, you can print the result or use it as needed
+    printf("%s\n", result);
+    printFromToGUI(result); 
 }
 
 Resources getResourceType(int program)
@@ -560,6 +570,7 @@ bool executeInstruction(int program)
 
         Resources tmp = getResourceType(program);
         Resources_availability[tmp] = false;
+        updateMutex(program, tmp, false);
     }
     else if (strcmp(splittedInstruction[0], "semSignal") == 0)
     {
@@ -571,6 +582,7 @@ bool executeInstruction(int program)
         printf("\n");
         Resources tmp = getResourceType(program);
         Resources_availability[tmp] = true;
+        updateMutex(program, tmp, true);
         // printf("resource we are unblocking: %d\n", tmp);
 
         if (algo != MLFQ)
@@ -669,7 +681,7 @@ void FCFS_algo()
             }
         }
         clockcycles++;
-        //printQueue(readyQueue, -1);
+        // printQueue(readyQueue, -1);
         update();
         if (stepper)
         {

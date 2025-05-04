@@ -209,5 +209,7 @@ separator {
 .label {
   font-size: 12px;
 }
-
+#process-list-scrolled {
+  min-height: 120px;
+}
 

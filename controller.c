@@ -11,6 +11,17 @@ SCHEDULING_ALGORITHM algo;
 bool stepper;
 bool alreadyRunning;
 
+char *assignInput()
+{
+    printf("Assigning input\n");
+    return create_input_dialog();
+}
+
+void printFromToGUI(char *result)
+{
+    // call a gui function to display the result
+}
+
 void update_pcb()
 {
     printf("Updating PCB\n");
@@ -41,7 +52,7 @@ void update_pcb()
 
 void update_queue(MemQueue readyQueue, DynamicQueueWidget ready_queue)
 {
-    //printf("Before\n");
+    // printf("Before\n");
     for (int i = 0; i < total_processes + 1; i++)
     {
         for (int j = 0; j < 3; j++)
@@ -50,7 +61,7 @@ void update_queue(MemQueue readyQueue, DynamicQueueWidget ready_queue)
             gtk_label_set_text(GTK_LABEL(ready_queue.value_labels[i][j]), value);
         }
     }
-    //printf("after1\n");
+    // printf("after1\n");
 
     if ((&readyQueue) != NULL && (&readyQueue)->size > 0)
     {
@@ -74,7 +85,7 @@ void update_queue(MemQueue readyQueue, DynamicQueueWidget ready_queue)
             update_queue_process(&ready_queue, i, ready_values);
         }
     }
-    //printf("after2\n");
+    // printf("after2\n");
 }
 
 update_memory()
@@ -102,6 +113,60 @@ update_memory()
         g_free(address_str);
     }
     printf("completed memory update\n");
+}
+
+void updateMutex(int program, int resource, bool status)
+{
+    char *resource_name;
+    switch (resource)
+    {
+    case 0:
+        resource_name = "File Access";
+        break;
+    case 1:
+        resource_name = "User Input";
+        break;
+    case 2:
+        resource_name = "User Output";
+        break;
+    default:
+        resource_name = "Unknown";
+    }
+    char *program_name = g_strdup_printf("Process ID %d", program);
+
+    if (!status)
+    {
+        gtk_list_store_insert_with_values(mutex_status_store, NULL, -1,
+                                          0, resource_name,
+                                          1, program_name,
+                                          -1);
+    }
+    else
+    {
+        GtkTreeIter iter;
+        gboolean valid = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(mutex_status_store), &iter);
+
+        while (valid)
+        {
+            gchar *current_resource_name;
+            gtk_tree_model_get(GTK_TREE_MODEL(mutex_status_store), &iter,
+                               0, &current_resource_name, // Column 0 contains the resource name
+                               -1);
+
+            if (g_strcmp0(current_resource_name, resource_name) == 0)
+            {
+                // Remove the row if the resource name matches
+                valid = gtk_list_store_remove(mutex_status_store, &iter);
+            }
+            else
+            {
+                // Move to the next row
+                valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(mutex_status_store), &iter);
+            }
+
+            g_free(current_resource_name); // Free the allocated string
+        }
+    }
 }
 
 void update()
@@ -165,6 +230,7 @@ void reset_execution(GtkWidget *widget, gpointer user_data)
     alreadyRunning = false;
     reset_all();
     update();
+    gtk_list_store_clear(mutex_status_store);
 }
 
 void set_scheduler(GtkWidget *widget)

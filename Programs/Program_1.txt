@@ -1,5 +1,5 @@
 semWait userInput
-assign a 4
+assign a input
 assign b 10
 semSignal userInput
 semWait userOutput
