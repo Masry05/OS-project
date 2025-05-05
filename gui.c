@@ -1439,9 +1439,9 @@ static void setup_main_window(GtkWidget *window)
         g_warning("label_total_procs_value is not a valid GtkLabel");
     }
 
-    append_instruction_log("LOAD R1, A", "P1", "Acquired user quantum_input");
-    append_instruction_log("ADD R2, R1", "P2", "Waiting for file");
-    append_instruction_log("STORE R2, B", "P3", "Released user quantum_input");
+    // append_instruction_log("LOAD R1, A", "P1", "Acquired user quantum_input");
+    // append_instruction_log("ADD R2, R1", "P2", "Waiting for file");
+    // append_instruction_log("STORE R2, B", "P3", "Released user quantum_input");
 
     gtk_widget_show_all(window);
 }

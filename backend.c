@@ -506,9 +506,16 @@ bool executeInstruction(int program)
         }
         printf("\n");
         printVar(program, splittedInstruction[1]);
+        char prog_buf[12];
+        snprintf(prog_buf, sizeof prog_buf, "%d", program); 
+        updateExecutionLog( instruction,prog_buf , "");
+
     }
     else if (strcmp(splittedInstruction[0], "assign") == 0)
     {
+        char prog_buf[12];
+        snprintf(prog_buf, sizeof prog_buf, "%d", program); 
+        updateExecutionLog( instruction, prog_buf , "");
         printf("Instruction: %s, Arguments: ", splittedInstruction[0]);
         for (int i = 1; i < instructionCount; i++)
         {
@@ -531,6 +538,7 @@ bool executeInstruction(int program)
     }
     else if (strcmp(splittedInstruction[0], "writeFile") == 0)
     {
+
         printf("Instruction: %s, Arguments: ", splittedInstruction[0]);
         for (int i = 1; i < instructionCount; i++)
         {
@@ -538,6 +546,10 @@ bool executeInstruction(int program)
         }
         printf("\n");
         writeFile(program, splittedInstruction[1], splittedInstruction[2]);
+        char prog_buf[12];
+        snprintf(prog_buf, sizeof prog_buf, "%d", program); 
+        updateExecutionLog( instruction,prog_buf , ("Wrote to:  %s\n", splittedInstruction[1]) );
+
     }
     else if (strcmp(splittedInstruction[0], "readFile") == 0)
     {
@@ -548,6 +560,10 @@ bool executeInstruction(int program)
         }
         printf("\n");
         readFile(program, splittedInstruction[1]);
+        char prog_buf[12];
+        snprintf(prog_buf, sizeof prog_buf, "%d", program); 
+        updateExecutionLog( instruction,prog_buf , ("Read from: %s", splittedInstruction[1]) );
+
     }
     else if (strcmp(splittedInstruction[0], "printFromTo") == 0)
     {
@@ -558,6 +574,10 @@ bool executeInstruction(int program)
         }
         printf("\n");
         printFromTo(program, splittedInstruction[1], splittedInstruction[2]);
+        char prog_buf[12];
+        snprintf(prog_buf, sizeof prog_buf, "%d", program); 
+        updateExecutionLog( instruction,prog_buf ,"");
+
     }
     else if (strcmp(splittedInstruction[0], "semWait") == 0)
     {
@@ -571,6 +591,29 @@ bool executeInstruction(int program)
         Resources tmp = getResourceType(program);
         Resources_availability[tmp] = false;
         updateMutex(program, tmp, false);
+        char *resource = NULL;
+        switch (tmp)
+        {
+        case FILE_ACCESS:
+            resource = "File Access";
+            break;
+        case USER_INPUT:
+            resource = "User Input";
+            break;
+        case USER_OUTPUT:
+            resource = "User Output";
+            break;
+        default:
+            break;
+        }
+        char prog_buf[12];
+        snprintf(prog_buf, sizeof prog_buf, "%d", program);
+        char reac_buf[64];
+        snprintf(reac_buf, sizeof(reac_buf),
+                "Acquired Resource: %s",
+                resource); 
+        updateExecutionLog( instruction,prog_buf, reac_buf ) ;
+
     }
     else if (strcmp(splittedInstruction[0], "semSignal") == 0)
     {
@@ -601,6 +644,30 @@ bool executeInstruction(int program)
                 enqueue(MLFQ_queues[curr_level[atoi(memory[programStartIndex[tmp2]].value)]], tmp2, curr_level[atoi(memory[programStartIndex[tmp2]].value)]);
             }
         }
+
+        char *resource = NULL;
+        switch (tmp)
+        {
+        case FILE_ACCESS:
+            resource = "File Access";
+            break;
+        case USER_INPUT:
+            resource = "User Input";
+            break;
+        case USER_OUTPUT:
+            resource = "User Output";
+            break;
+        default:
+            break;
+        }
+        char prog_buf[12];
+        snprintf(prog_buf, sizeof prog_buf, "%d", program);
+        char reac_buf[64];
+        snprintf(reac_buf, sizeof(reac_buf),
+                "Freed Resource: %s",
+                resource); 
+        updateExecutionLog( instruction, prog_buf, reac_buf);
+
     }
     else
     {
@@ -884,7 +951,6 @@ void MLFQ_algo()
             {
    
                 printf("executing    => clockcycles %2d: Running prog %d, PC=%d, instr='%s'\n", clockcycles, running, pc, memory[pc].value);
-
                 if (executeInstruction(running))
                 {
                     dequeue(MLFQ_queues[lvl]);

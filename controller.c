@@ -116,6 +116,14 @@ void update_memory()
     printf("completed memory update\n");
 }
 
+// void append_instruction_log(const gchar *instruction, const gchar *pid, const gchar *reaction)
+
+
+void updateExecutionLog(const gchar *instruction, const gchar *pid, const gchar *reaction){
+
+    append_instruction_log(instruction, pid, reaction);
+}
+
 void updateMutex(int program, int resource, bool status)
 {
     char *resource_name;

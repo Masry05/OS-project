@@ -6,6 +6,8 @@ void update();
 char *assignInput();
 void printFromToGUI(char *result);
 void updateMutex(int program, int resource, bool status);
+void updateExecutionLog(const char *instruction, const char *pid, const char *reaction);
+
 // Declare setup function
 
 #endif
