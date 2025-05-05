@@ -7,7 +7,8 @@
 void auto_execution(GtkWidget *widget, gpointer user_data);
 void step_execution(GtkWidget *widget, gpointer user_data);
 void reset_execution(GtkWidget *widget, gpointer user_data);
-
+void reset_all();
+void intialize_dashboard();
 void update_pcb();
 
 // Declare setup function

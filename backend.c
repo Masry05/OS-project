@@ -598,7 +598,7 @@ bool executeInstruction(int program)
             while (peek(BlockingQueues[tmp]) != -1)
             {
                 int tmp2 = dequeue(BlockingQueues[tmp]);
-                enqueue(MLFQ_queues[atoi(memory[programStartIndex[tmp2] + 2].value)], tmp2, atoi(memory[programStartIndex[tmp2] + 2].value));
+                enqueue(MLFQ_queues[curr_level[atoi(memory[programStartIndex[tmp2]].value)]], tmp2, curr_level[atoi(memory[programStartIndex[tmp2]].value)]);
             }
         }
     }

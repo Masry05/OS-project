@@ -1086,6 +1086,60 @@ GtkWidget *create_error_dashboard()
     return dashboard_vbox;
 }
 
+// This function will handle the file confirmation and display contents in a new popup window
+void handle_file_confirmation(GtkWidget *file_chooser)
+{
+    gchar *filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(file_chooser));
+    g_print("File selected: %s\n", filename);
+
+    // Create a new popup window to display the file content
+    GtkWidget *popup_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(popup_window), "File Contents");
+    gtk_window_set_default_size(GTK_WINDOW(popup_window), 400, 300);
+
+    GtkWidget *popup_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_container_add(GTK_CONTAINER(popup_window), popup_vbox);
+
+    GtkWidget *content_label = gtk_label_new("Instructions:");
+    gtk_box_pack_start(GTK_BOX(popup_vbox), content_label, FALSE, FALSE, 5);
+
+    // Validate file
+    if (strstr(filename, ".txt") != NULL)
+    {
+
+        FILE *file = fopen(filename, "r");
+        if (file)
+        {
+            char line[256];
+            while (fgets(line, sizeof(line), file))
+            {
+                GtkWidget *line_label = gtk_label_new(line);
+                gtk_box_pack_start(GTK_BOX(popup_vbox), line_label, FALSE, FALSE, 5);
+            }
+            fclose(file);
+
+            // Create process config hbox with filename
+            GtkWidget *process_config_hbox = create_process_config_hbox(popup_window, filename);
+            gtk_widget_set_valign(process_config_hbox, GTK_ALIGN_CENTER);
+            gtk_box_pack_start(GTK_BOX(popup_vbox), process_config_hbox, FALSE, FALSE, 0);
+        }
+        else
+        {
+            GtkWidget *error_label = gtk_label_new("Error: Unable to open the selected file.");
+            gtk_box_pack_start(GTK_BOX(popup_vbox), error_label, FALSE, FALSE, 5);
+        }
+    }
+    else
+    {
+        GtkWidget *error_label = gtk_label_new("Error: Invalid file selected.");
+        gtk_box_pack_start(GTK_BOX(popup_vbox), error_label, FALSE, FALSE, 5);
+    }
+
+    g_free(filename);
+    gtk_widget_show_all(popup_window);
+}
+
+
 void on_add_process_clicked(GtkWidget *widget, gpointer data)
 {
     GtkWidget *dialog, *file_chooser;
@@ -1392,58 +1446,6 @@ static void setup_main_window(GtkWidget *window)
     gtk_widget_show_all(window);
 }
 
-// This function will handle the file confirmation and display contents in a new popup window
-void handle_file_confirmation(GtkWidget *file_chooser)
-{
-    gchar *filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(file_chooser));
-    g_print("File selected: %s\n", filename);
-
-    // Create a new popup window to display the file content
-    GtkWidget *popup_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(popup_window), "File Contents");
-    gtk_window_set_default_size(GTK_WINDOW(popup_window), 400, 300);
-
-    GtkWidget *popup_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
-    gtk_container_add(GTK_CONTAINER(popup_window), popup_vbox);
-
-    GtkWidget *content_label = gtk_label_new("Instructions:");
-    gtk_box_pack_start(GTK_BOX(popup_vbox), content_label, FALSE, FALSE, 5);
-
-    // Validate file
-    if (strstr(filename, ".txt") != NULL)
-    {
-
-        FILE *file = fopen(filename, "r");
-        if (file)
-        {
-            char line[256];
-            while (fgets(line, sizeof(line), file))
-            {
-                GtkWidget *line_label = gtk_label_new(line);
-                gtk_box_pack_start(GTK_BOX(popup_vbox), line_label, FALSE, FALSE, 5);
-            }
-            fclose(file);
-
-            // Create process config hbox with filename
-            GtkWidget *process_config_hbox = create_process_config_hbox(popup_window, filename);
-            gtk_widget_set_valign(process_config_hbox, GTK_ALIGN_CENTER);
-            gtk_box_pack_start(GTK_BOX(popup_vbox), process_config_hbox, FALSE, FALSE, 0);
-        }
-        else
-        {
-            GtkWidget *error_label = gtk_label_new("Error: Unable to open the selected file.");
-            gtk_box_pack_start(GTK_BOX(popup_vbox), error_label, FALSE, FALSE, 5);
-        }
-    }
-    else
-    {
-        GtkWidget *error_label = gtk_label_new("Error: Invalid file selected.");
-        gtk_box_pack_start(GTK_BOX(popup_vbox), error_label, FALSE, FALSE, 5);
-    }
-
-    g_free(filename);
-    gtk_widget_show_all(popup_window);
-}
 
 // Optional: Function to free process_list on application exit
 void free_process_list()

@@ -89,7 +89,7 @@ void update_queue(MemQueue readyQueue, DynamicQueueWidget ready_queue)
     // printf("after2\n");
 }
 
-update_memory()
+void update_memory()
 {
     printf("Updating memory\n");
     gtk_list_store_clear(memory_viewer_store);
