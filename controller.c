@@ -20,6 +20,7 @@ char *assignInput()
 void printFromToGUI(char *result)
 {
     // call a gui function to display the result
+    printPopUp(result);
 }
 
 void update_pcb()

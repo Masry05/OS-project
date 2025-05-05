@@ -85,15 +85,6 @@ typedef struct
 // Global list to store processes
 GList *process_list = NULL;
 
-// Modified SetButtonData to include filename
-/*typedef struct
-{
-    GtkWidget *entry;
-    GtkWidget *popup_window;
-    char *filename; // Add filename to pass to callback
-} SetButtonData;*/
-
-// Structure to hold button callback data
 typedef struct
 {
     GtkWidget *entry;
@@ -537,24 +528,7 @@ GtkWidget *create_resource_vbox()
 
     return resource_vbox;
 }
-/*
 // Log & Console Panel
-GtkWidget *create_log_console_panel()
-{
-    GtkWidget *log_console_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
-    gtk_container_set_border_width(GTK_CONTAINER(log_console_vbox), 10); // Inner padding for nicer look
-    gtk_widget_set_size_request(log_console_vbox, -1, 150);
-
-    const gchar *log_console_columns[] = {"Instruction", "Process ID", "System Reaction"};
-    GtkWidget *log_console_treeview = create_labeled_treeview("Execution Log", log_console_columns, 3, &log_store);
-    // Add log console to the log console VBox
-    gtk_box_pack_start(GTK_BOX(log_console_vbox), log_console_treeview, TRUE, TRUE, 0);
-    // Add label called Event Messages:
-    label_event_messages = gtk_label_new(NULL);
-    gtk_label_set_markup(GTK_LABEL(label_event_messages), "<span font='10'><b>Event Messages:</b></span>");
-    gtk_box_pack_start(GTK_BOX(log_console_vbox), label_event_messages, FALSE, FALSE, 0);
-    return log_console_vbox;
-}*/
 GtkWidget *create_log_console_panel()
 {
     GtkWidget *log_console_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
@@ -607,7 +581,7 @@ GtkWidget *create_memory_log_hbox()
     return memory_log_hbox;
 }
 // Callback for the "delete-event" to prevent closing unless valid input
-gboolean on_popup_delete_event(GtkWidget *widget, GdkEvent *event, gpointer user_data)
+/*gboolean on_popup_delete_event(GtkWidget *widget, GdkEvent *event, gpointer user_data)
 {
     SetButtonData *data = (SetButtonData *)user_data;
     if (!data->valid_input)
@@ -619,6 +593,11 @@ gboolean on_popup_delete_event(GtkWidget *widget, GdkEvent *event, gpointer user
         return TRUE; // TRUE prevents the window from closing
     }
     return FALSE; // Allow closing if valid input
+}*/
+gboolean on_popup_delete_event(GtkWidget *widget, GdkEvent *event, gpointer user_data)
+{
+    gtk_window_close(GTK_WINDOW(widget)); // Close the window immediately
+    return TRUE; // Prevent default behavior
 }
 void on_set_arrival_time_clicked(GtkButton *button, gpointer user_data)
 {
@@ -724,49 +703,13 @@ GtkWidget *create_process_config_hbox(GtkWidget *popup_window, const char *filen
     g_signal_connect(G_OBJECT(set_button), "clicked", G_CALLBACK(on_set_arrival_time_clicked), data);
 
     // Connect delete-event to prevent closing without valid input
-    g_signal_connect(G_OBJECT(popup_window), "delete-event", G_CALLBACK(on_popup_delete_event), data);
+   //g_signal_connect(G_OBJECT(popup_window), "delete-event", G_CALLBACK(on_popup_delete_event), data);
 
     // Free data when the popup is destroyed
     g_signal_connect(G_OBJECT(popup_window), "destroy", G_CALLBACK(on_popup_destroy), data);
 
     return process_config_hbox;
 }
-// Modified function to create the process config HBox
-/*GtkWidget *create_process_config_hbox(GtkWidget *popup_window, const char *filename)
-{
-    GtkWidget *process_config_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
-    gtk_container_set_border_width(GTK_CONTAINER(process_config_hbox), 5);
-
-    // Arrival Time Label
-    GtkWidget *process_arrival_time_label = gtk_label_new("Arrival Time:");
-    gtk_widget_set_valign(process_arrival_time_label, GTK_ALIGN_CENTER);
-    gtk_box_pack_start(GTK_BOX(process_config_hbox), process_arrival_time_label, FALSE, FALSE, 0);
-
-    // Entry Field
-    GtkWidget *arrival_entry = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(arrival_entry), "Please enter the arrival time");
-    gtk_widget_set_size_request(arrival_entry, 230, 35);
-    gtk_widget_set_valign(arrival_entry, GTK_ALIGN_CENTER);
-    gtk_box_pack_start(GTK_BOX(process_config_hbox), arrival_entry, FALSE, FALSE, 0);
-
-    // Set Button
-    GtkWidget *set_button = gtk_button_new_with_label("Set");
-    gtk_widget_set_size_request(set_button, 80, 35);
-    gtk_widget_set_valign(set_button, GTK_ALIGN_CENTER);
-    gtk_box_pack_start(GTK_BOX(process_config_hbox), set_button, FALSE, FALSE, 0);
-
-    // Pass entry, popup_window, and filename to the callback
-    SetButtonData *data = g_new(SetButtonData, 1);
-    data->entry = arrival_entry;
-    data->popup_window = popup_window;
-    data->filename = g_strdup(filename);
-    g_signal_connect(G_OBJECT(set_button), "clicked", G_CALLBACK(on_set_arrival_time_clicked), data);
-
-    // Free data when the popup is destroyed
-    g_signal_connect(G_OBJECT(popup_window), "destroy", G_CALLBACK(on_popup_destroy), data);
-
-    return process_config_hbox;
-}*/
 // Changing current instr (for backend)
 void append_instruction_log(const gchar *instruction, const gchar *pid, const gchar *reaction)
 {
@@ -837,69 +780,10 @@ static void on_entry_activate(GtkEntry *entry, gpointer user_data)
     }
 }
 
-// Function to create a popup dialog with an input field
-// gchar *create_input_dialog(GtkWindow *parent)
-// {
-//     // Create a modal dialog
-//     GtkWidget *dialog = gtk_dialog_new_with_buttons(
-//         "User Input",
-//         parent,
-//         GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-//         "_Cancel",
-//         GTK_RESPONSE_CANCEL,
-//         "_OK",
-//         GTK_RESPONSE_OK,
-//         NULL);
-//     gtk_window_set_default_size(GTK_WINDOW(dialog), 300, 150);
-
-//     // Get the content area
-//     GtkWidget *content_area = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
-//     GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
-//     gtk_container_add(GTK_CONTAINER(content_area), vbox);
-//     gtk_container_set_border_width(GTK_CONTAINER(vbox), 10);
-
-//     // Add a label with instructions
-//     GtkWidget *label = gtk_label_new("Enter a value and press Enter:");
-//     gtk_box_pack_start(GTK_BOX(vbox), label, FALSE, FALSE, 5);
-
-//     // Add an entry field
-//     GtkWidget *entry = gtk_entry_new();
-//     gtk_entry_set_placeholder_text(GTK_ENTRY(entry), "Enter value");
-//     gtk_widget_set_size_request(entry, 200, 35);
-//     gtk_box_pack_start(GTK_BOX(vbox), entry, FALSE, FALSE, 5);
-
-//     // Apply CSS classes for styling (remove if not using style.css)
-//     gtk_style_context_add_class(gtk_widget_get_style_context(dialog), "dialog");
-//     gtk_style_context_add_class(gtk_widget_get_style_context(entry), "entry");
-//     gtk_style_context_add_class(gtk_widget_get_style_context(label), "label");
-
-//     // Variable to store the input
-//     gchar *result = NULL;
-
-//     // Connect Enter key signal
-//     g_signal_connect(entry, "activate", G_CALLBACK(on_entry_activate), &result);
-//     g_signal_connect_swapped(entry, "activate", G_CALLBACK(gtk_dialog_response), dialog);
-
-//     // Show all widgets
-//     gtk_widget_show_all(content_area);
-
-//     // Run the dialog
-//     gint response = gtk_dialog_run(GTK_DIALOG(dialog));
-//     if (response != GTK_RESPONSE_OK)
-//     {
-//         g_free(result); // Free if set but canceled
-//         result = NULL;
-//     }
-
-//     // Destroy the dialog
-//     gtk_widget_destroy(dialog);
-//     return result; // Return value for saving in last_user_input
-// }
-
+// Create assign pop up
 char *create_input_dialog()
 {
-    // Create modal dialog without cancel button
-    GtkWidget *dialog = gtk_dialog_new_with_buttons(
+    GtkWidget *dialog = gtk_dialog_new_with_buttons(    
         "User Input",                                      // Title
         NULL,                                              // Parent window (NULL for no parent)
         GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT, // Dialog flags
@@ -973,6 +857,48 @@ void on_input_dialog_clicked(GtkButton *button, gpointer user_data)
         g_print("No input or dialog canceled\n");
     }
 }
+
+#include <gtk/gtk.h>
+
+//printfromto
+void printPopUp(char *result)
+{
+    // Create a new dialog window
+    GtkWidget *dialog = gtk_dialog_new_with_buttons(
+        "Print Result",              // Title
+        NULL,                       // Parent window (NULL for none)
+        GTK_DIALOG_MODAL,           // Modal dialog
+        "_OK",                      // Button label
+        GTK_RESPONSE_OK,            // Button response
+        NULL                        // End of buttons
+    );
+
+    gtk_window_set_default_size(GTK_WINDOW(dialog), 400, 200);
+
+    // Get the content area of the dialog
+    GtkWidget *content_area = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
+
+    // Create a label to display the result string
+    GtkWidget *label = gtk_label_new(result);
+    gtk_label_set_line_wrap(GTK_LABEL(label), TRUE); // Enable line wrapping
+    gtk_widget_set_margin_start(label, 20);
+    gtk_widget_set_margin_end(label, 20);
+    gtk_widget_set_margin_top(label, 20);
+    gtk_widget_set_margin_bottom(label, 20);
+
+    // Add the label to the content area
+    gtk_box_pack_start(GTK_BOX(content_area), label, TRUE, TRUE, 0);
+
+    // Show all widgets in the dialog
+    gtk_widget_show_all(dialog);
+
+    // Run the dialog and wait for response
+    gtk_dialog_run(GTK_DIALOG(dialog));
+
+    // Destroy the dialog after it's closed
+    gtk_widget_destroy(dialog);
+}
+
 
 GtkWidget *create_fcfs_dashboard()
 {
@@ -1051,11 +977,6 @@ GtkWidget *create_rr_dashboard()
 
     // Blocking queues
     const char *blocking_headers[] = {"Process ID", "Instruction", "Time in Queue"};
-
-    // Dummy data for blocking queues
-    // const char *userinput_values[] = {"2", "Input", "3s"};
-    // const char *useroutput_values[] = {"3", "Output", "2s"};
-    // const char *file_values[] = {"4", "File Read", "4s"};
 
     // User Input Blocking Queue
     userinput_queue = create_dynamic_queue("User Input Blocking Queue", blocking_headers, 3);
@@ -1352,10 +1273,6 @@ void on_back_button_clicked(GtkButton *button, gpointer user_data)
         process_list = NULL;                    // Reset the list pointer
     }
 
-    // Reset process information and memory
-    // memset(programs_arrival_list, 0, sizeof(programs_arrival_list));
-    // Free the programList if it was allocated and reset the pointer
-
     // Clear the GtkTreeView model if it is initialized
     if (process_list_store)
     {
@@ -1375,9 +1292,6 @@ void on_back_button_clicked(GtkButton *button, gpointer user_data)
     // hide initially the quantum_button_box
     gtk_widget_show_all(initial_window);
     gtk_widget_hide(quantum_button_box);
-
-    // Optionally show a popup message
-    // show_message_popup(GTK_WINDOW(initial_window), "Returned to initial window!");
 }
 
 // Execution HBox
@@ -1470,32 +1384,6 @@ static void setup_main_window(GtkWidget *window)
     {
         g_warning("label_total_procs_value is not a valid GtkLabel");
     }
-
-    // Populate process_list_store with any processes added in the initial window
-    // if (process_list_store && GTK_IS_LIST_STORE(process_list_store))
-    // {
-    //     for (GList *iter = process_list; iter != NULL; iter = iter->next)
-    //     {
-    //         ProcessInfo *process = (ProcessInfo *)iter->data;
-    //         gtk_list_store_insert_with_values(process_list_store, NULL, -1,
-    //                                           0, g_strdup_printf("%d", process->pid),
-    //                                           1, "Ready",
-    //                                           2, "Normal",
-    //                                           3, "TBD",
-    //                                           4, "0",
-    //                                           -1);
-    //     }
-    // }
-    // else
-    // {
-    //     g_warning("process_list_store is not a valid GtkListStore");
-    // }
-
-    // gtk_list_store_insert_with_values(mutex_status_store, NULL, -1,
-    //                                   0, "Mutex1",
-    //                                   1, "8",
-    //                                   2, "9",
-    //                                   -1);
 
     append_instruction_log("LOAD R1, A", "P1", "Acquired user quantum_input");
     append_instruction_log("ADD R2, R1", "P2", "Waiting for file");
