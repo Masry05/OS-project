@@ -124,6 +124,10 @@ void updateExecutionLog(const gchar *instruction, const gchar *pid, const gchar 
     append_instruction_log(instruction, pid, reaction);
 }
 
+
+void addEventMessage(char *message){
+    append_event_message(message);
+}
 void updateMutex(int program, int resource, bool status)
 {
     char *resource_name;

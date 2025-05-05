@@ -563,6 +563,43 @@ GtkWidget *create_log_console_panel()
     return log_console_vbox;
 }
 
+
+void append_event_message(const char *fmt, ...)
+{
+    va_list args;
+    gchar  *msg;
+    GtkTextIter end;
+
+    /* build your formatted string */
+    va_start(args, fmt);
+    msg = g_strdup_vprintf(fmt, args);
+    va_end(args);
+
+    /* make sure it ends in a newline */
+    if (!g_str_has_suffix(msg, "\n")) {
+        gchar *with_nl = g_strconcat(msg, "\n", NULL);
+        g_free(msg);
+        msg = with_nl;
+    }
+
+    /* get end of buffer and insert */
+    gtk_text_buffer_get_end_iter(messages_buffer, &end);
+    gtk_text_buffer_insert(messages_buffer, &end, msg, -1);
+
+    g_free(msg);
+
+    /* (optional) scroll to the bottom so the new line is visible */
+    gtk_text_view_scroll_to_iter(
+        GTK_TEXT_VIEW(event_messages_text_view),
+        &end,  /* iter to scroll to */
+        0.0,   /* within-visible-area horizontal position */
+        FALSE, /* use align? */
+        0.0,   /* xalign */
+        1.0    /* yalign — 1.0 = bottom */
+    );
+}
+
+
 // Memory+Log
 GtkWidget *create_memory_log_hbox()
 {

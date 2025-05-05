@@ -740,7 +740,18 @@ void FCFS_algo()
         }
         // execute the process that has its turn
         if (peek(readyQueue) != -1)
-        {
+        {    char message[256]; 
+
+            int pc = atoi(memory[programStartIndex[peek(readyQueue)] + 3].value);
+            snprintf(message, sizeof(message),
+                     "executing =>clockcycles %2d: Running prog %d, PC=%d, instr='%s'\n",
+                     clockcycles,
+                     peek(readyQueue),
+                     pc,
+                     memory[pc].value);
+            message[strcspn(message, "\n")] = '\0'; // Remove newline character
+             printf("%s", message);
+             addEventMessage(message);
             if (executeInstruction(peek(readyQueue)))
             {
                 dequeue(readyQueue);
@@ -805,13 +816,36 @@ void RR_algo()
             // int pc =  atoi(peek(readyQueue)[3].arg1)+8;
             // printf("trying    =>clockcycles %2d: Running prog %d, PC=%d, instr='%s'\n",clockcycles, atoi(peek(readyQueue)[0].arg1) ,pc,peek(readyQueue)[pc].identifier );
             int pc = atoi(memory[programStartIndex[current_process] + 3].value);
-            printf("trying    =>clockcycles %2d: Running prog %d, PC=%d, instr='%s'\n", clockcycles, current_process, pc, memory[pc].value);
+            // printf("trying    =>clockcycles %2d: Running prog %d, PC=%d, instr='%s'\n", clockcycles, current_process, pc, memory[pc].value);
+            char message[256];
+            snprintf(message, sizeof(message),
+                    "trying    => clockcycles %2d: Running prog %d, PC=%d, instr='%s' \n",
+                    clockcycles,
+                    current_process,
+                    pc,
+                    memory[pc].value);
+            message[strcspn(message, "\n")] = '\0'; // Remove newline character
+            printf("%s", message);
+            addEventMessage(message);
+            
             // Print out the ready queue
 
             if (can_execute_instruction(current_process))
             {
                 int pc = atoi(memory[programStartIndex[current_process] + 3].value);
-                printf("executing =>clockcycles %2d: Running prog %d, PC=%d, instr='%s'\n", clockcycles, current_process, pc, memory[pc].value);
+                
+               // printf("executing =>clockcycles %2d: Running prog %d, PC=%d, instr='%s'\n", clockcycles, current_process, pc, memory[pc].value);
+               char message[256]; 
+               snprintf(message, sizeof(message),
+                        "executing =>clockcycles %2d: Running prog %d, PC=%d, instr='%s'\n",
+                        clockcycles,
+                        current_process,
+                        pc,
+                        memory[pc].value);
+                message[strcspn(message, "\n")] = '\0'; // Remove newline character
+                printf("%s", message);
+
+                addEventMessage(message);
                 // executing the instruction, will ready the corresponding blocked processes in case of semSignal
                 if (executeInstruction(current_process))
                 {
@@ -946,11 +980,33 @@ void MLFQ_algo()
         {   
             int lvl = curr_level[running];
             int pc = atoi(memory[programStartIndex[running] + 3].value);
-            printf("trying    => clockcycles %2d: Running prog %d, PC=%d, instr='%s'\n", clockcycles, running, pc, memory[pc].value);
+            //printf("trying    => clockcycles %2d: Running prog %d, PC=%d, instr='%s'\n", clockcycles, running, pc, memory[pc].value);
+           
+            char message[256];
+            snprintf(message, sizeof(message),
+                    "trying    => clockcycles %2d: Running prog %d, PC=%d, instr='%s'\n",
+                    clockcycles,
+                    running,
+                    pc,
+                    memory[pc].value);
+            message[strcspn(message, "\n")] = '\0'; // Remove newline character
+            printf("%s", message);
+            addEventMessage(message);
+            
             if (can_execute_instruction(running))
             {
    
-                printf("executing    => clockcycles %2d: Running prog %d, PC=%d, instr='%s'\n", clockcycles, running, pc, memory[pc].value);
+                //printf("executing    => clockcycles %2d: Running prog %d, PC=%d, instr='%s'\n", clockcycles, running, pc, memory[pc].value);
+                char message[256]; 
+                snprintf(message, sizeof(message),
+                         "executing =>clockcycles %2d: Running prog %d, PC=%d, instr='%s'\n",
+                         clockcycles,
+                         running,
+                         pc,
+                         memory[pc].value);
+                message[strcspn(message, "\n")] = '\0'; // Remove newline character
+                 printf("%s", message);
+                 addEventMessage(message);
                 if (executeInstruction(running))
                 {
                     dequeue(MLFQ_queues[lvl]);
@@ -988,6 +1044,14 @@ void MLFQ_algo()
                 int tmp = dequeue(MLFQ_queues[lvl]);
                 enqueue(get_blocking_queue(running), tmp, atoi(memory[programStartIndex[tmp] + 2].value));
                 printf("BLOCKED  → pid=%d in Q%d\n", running, lvl);
+                snprintf(message, sizeof(message),
+                        "BLOCKED  → pid=%d in Q%d\n",
+                        running,
+                        lvl);
+                message[strcspn(message, "\n")] = '\0'; // Remove newline character
+                printf("%s", message);
+                addEventMessage(message);
+
                 running = -1;
                 update();
             }
