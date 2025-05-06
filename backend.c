@@ -1308,7 +1308,7 @@ void scheduler()
 
 void reset_all()
 {
-    int RR_quantum = 0;
+    //int RR_quantum = 0;
     stepper = false;
     alreadyRunning = false;
     clockcycles = 0;
@@ -1340,6 +1340,10 @@ void reset_all()
     {
         programList[i].arrivalTime = programs_arrival_list[i];
     }
+    Resources_availability[0] = true;
+    Resources_availability[1] = true;
+    Resources_availability[2] = true;
+    
 
     PopulateMemory();
 }
