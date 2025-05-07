@@ -5,8 +5,8 @@
 #include <ctype.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <inttypes.h> // for PRIu64
-#define MAX_QSIZE 60  // or whatever max you need
+#include <inttypes.h>   // for PRIu64
+#define MAX_QSIZE  60  // or whatever max you need
 #define MAX_STRING_LENGTH 100
 
 typedef struct
@@ -16,8 +16,8 @@ typedef struct
     char value2[MAX_STRING_LENGTH];
 } MemoryWord;
 
-typedef enum
-{
+
+typedef enum {
     NEW,
     READY,
     RUNNING,
@@ -25,16 +25,14 @@ typedef enum
     TERMINATED
 } process_state;
 
-typedef enum
-{
+typedef enum {
     FILE_ACCESS,
     USER_INPUT,
     USER_OUTPUT,
     NUM_RESOURCES
 } Resources;
 
-typedef enum
-{
+typedef enum {
     FCFS,
     RR,
     MLFQ
@@ -46,65 +44,57 @@ typedef enum
 //     int  arg2;    // you can still use this or ignore it
 // };
 
+
 // ——— a node in our heap ———
-typedef struct
-{
-    int ptr; // the user payload
-    int priority;
-    uint64_t seqno; // tie‑breaker: lower = older
+typedef struct {
+    int ptr;  // the user payload
+    int                priority;
+    uint64_t           seqno; // tie‑breaker: lower = older
 } PQNode;
 
 // ——— the priority queue itself ———
-typedef struct
-{
-    PQNode items[MAX_QSIZE];
-    int size;
-    uint64_t nextSeq; // for assigning seqno
+typedef struct {
+    PQNode  items[MAX_QSIZE];
+    int     size;
+    uint64_t nextSeq;  // for assigning seqno
 } MemQueue;
 
 // ——— helper: swap two nodes ———
-static void swapNode(PQNode *a, PQNode *b)
-{
+static void swapNode(PQNode *a, PQNode *b) {
     PQNode tmp = *a;
     *a = *b;
     *b = tmp;
 }
 
 // ——— comparator: returns true if a < b in heap order ———
-static bool lessThan(const PQNode *a, const PQNode *b)
-{
+static bool lessThan(const PQNode *a, const PQNode *b) {
     if (a->priority != b->priority)
         return a->priority < b->priority;
     return a->seqno < b->seqno;
 }
 
 // ——— bubble up the node at idx ———
-static void heapifyUp(MemQueue *q, int idx)
-{
-    if (idx == 0)
-        return;
+static void heapifyUp(MemQueue *q, int idx) {
+    if (idx == 0) return;
     int parent = (idx - 1) / 2;
-    if (lessThan(&q->items[idx], &q->items[parent]))
-    {
+    if (lessThan(&q->items[idx], &q->items[parent])) {
         swapNode(&q->items[idx], &q->items[parent]);
         heapifyUp(q, parent);
     }
 }
 
 // ——— push down the node at idx ———
-static void heapifyDown(MemQueue *q, int idx)
-{
+static void heapifyDown(MemQueue *q, int idx) {
     int smallest = idx;
-    int left = 2 * idx + 1;
-    int right = 2 * idx + 2;
+    int left  = 2*idx + 1;
+    int right = 2*idx + 2;
 
     if (left < q->size && lessThan(&q->items[left], &q->items[smallest]))
         smallest = left;
     if (right < q->size && lessThan(&q->items[right], &q->items[smallest]))
         smallest = right;
 
-    if (smallest != idx)
-    {
+    if (smallest != idx) {
         swapNode(&q->items[idx], &q->items[smallest]);
         heapifyDown(q, smallest);
     }
@@ -113,21 +103,18 @@ static void heapifyDown(MemQueue *q, int idx)
 // ——— public API ———
 
 // Initialize empty queue
-void initQueue(MemQueue *q)
-{
-    q->size = 0;
+void initQueue(MemQueue *q) {
+    q->size    = 0;
     q->nextSeq = 0;
 }
 
 // Empty?
-bool isEmpty(MemQueue *q)
-{
+bool isEmpty(MemQueue *q) {
     return (q->size == 0);
 }
 
 // Full?
-bool isFull(MemQueue *q)
-{
+bool isFull(MemQueue *q) {
     return (q->size == MAX_QSIZE);
 }
 
@@ -136,17 +123,15 @@ bool isFull(MemQueue *q)
  * Lower priority value → higher scheduling priority.
  * Items with equal priority preserve FIFO via seqno.
  */
-void enqueue(MemQueue *q, int ptr, int priority)
-{
-    if (isFull(q))
-    {
+void enqueue(MemQueue *q, int ptr, int priority) {
+    if (isFull(q)) {
         fprintf(stderr, "PriorityQueue is full\n");
         return;
     }
     PQNode *node = &q->items[q->size];
-    node->ptr = ptr;
+    node->ptr      = ptr;
     node->priority = priority;
-    node->seqno = q->nextSeq++;
+    node->seqno    = q->nextSeq++;
     heapifyUp(q, q->size);
     q->size++;
 }
@@ -155,11 +140,9 @@ void enqueue(MemQueue *q, int ptr, int priority)
  * Peek at the highest‑priority item without removing it.
  * Returns NULL (and prints) if empty.
  */
-int peek(MemQueue *q)
-{
-    if (isEmpty(q))
-    {
-        // fprintf(stderr, "PriorityQueue is empty\n");
+int peek(MemQueue *q) {
+    if (isEmpty(q)) {
+        //fprintf(stderr, "PriorityQueue is empty\n");
         return -1;
     }
     return q->items[0].ptr;
@@ -169,10 +152,8 @@ int peek(MemQueue *q)
  * (Optional) Peek at the priority of the head.
  * Returns -1 if empty.
  */
-int peekPriority(MemQueue *q)
-{
-    if (isEmpty(q))
-    {
+int peekPriority(MemQueue *q) {
+    if (isEmpty(q)) {
         fprintf(stderr, "PriorityQueue is empty\n");
         return -1;
     }
@@ -183,10 +164,8 @@ int peekPriority(MemQueue *q)
  * Dequeue and return the highest‑priority MemoryWord*.
  * Returns NULL (and prints) if empty.
  */
-int dequeue(MemQueue *q)
-{
-    if (isEmpty(q))
-    {
+int  dequeue(MemQueue *q) {
+    if (isEmpty(q)) {
         fprintf(stderr, "PriorityQueue is empty\n");
         return -1;
     }
@@ -197,15 +176,13 @@ int dequeue(MemQueue *q)
     return top;
 }
 
-void printQueue(MemQueue *q, int qid)
-{
+void printQueue(MemQueue *q, int qid) {
     printf("  [Q%d] size=%2d |", qid, q->size);
-    for (int j = 0; j < q->size; ++j)
-    {
+    for (int j = 0; j < q->size; ++j) {
         PQNode *mw = q->items + j;
-        printf(" (ptr=%d,seq=%d, seqno=%lu)", mw->ptr,
+        printf(" (ptr=%d,seq=%d, seqno=%d" PRIu64 ")", mw->ptr,
                q->items[j].priority,
-               (unsigned long)q->items[j].seqno);
+               q->items[j].seqno);
     }
     printf("\n");
 }

@@ -119,7 +119,6 @@ int count_txt_files(const char *directory_path)
     DIR *dir;
     struct dirent *entry;
     int count = 0;
-    char full_path[PATH_MAX]; // Use PATH_MAX for maximum path length
 
     dir = opendir(directory_path);
     if (dir == NULL)
@@ -130,12 +129,11 @@ int count_txt_files(const char *directory_path)
 
     while ((entry = readdir(dir)) != NULL)
     {
+        // Use stat to check if it's a regular file instead of d_type
+        char full_path[MAX_STRING_LENGTH];
         struct stat st;
-        if (snprintf(full_path, PATH_MAX, "%s/%s", directory_path, entry->d_name) >= PATH_MAX)
-        {
-            fprintf(stderr, "Path too long: %s/%s\n", directory_path, entry->d_name);
-            continue;
-        }
+
+        snprintf(full_path, MAX_STRING_LENGTH, "%s/%s", directory_path, entry->d_name);
 
         if (stat(full_path, &st) == 0 && S_ISREG(st.st_mode))
         {
@@ -435,10 +433,10 @@ void on_dropdown_changed(GtkComboBox *combo, gpointer user_data)
 // Button click handler to set quantum level from the entry
 void on_set_quantum_level_button_clicked(GtkWidget *widget, gpointer user_data)
 {
-    const gchar *input_text = gtk_entry_get_text(GTK_ENTRY(quantum_input));
-    if (input_text && *input_text != '\0')
+    quantum_input_text = gtk_entry_get_text(GTK_ENTRY(quantum_input));
+    if (quantum_input_text && *quantum_input_text != '\0')
     {
-        RR_quantum = atoi(input_text);
+        RR_quantum = atoi(quantum_input_text);
         g_print("Quantum level set to: %d (global RR_quantum updated)\n", RR_quantum);
     }
     else
@@ -565,10 +563,11 @@ GtkWidget *create_log_console_panel()
     return log_console_vbox;
 }
 
+
 void append_event_message(const char *fmt, ...)
 {
     va_list args;
-    gchar *msg;
+    gchar  *msg;
     GtkTextIter end;
 
     /* build your formatted string */
@@ -577,8 +576,7 @@ void append_event_message(const char *fmt, ...)
     va_end(args);
 
     /* make sure it ends in a newline */
-    if (!g_str_has_suffix(msg, "\n"))
-    {
+    if (!g_str_has_suffix(msg, "\n")) {
         gchar *with_nl = g_strconcat(msg, "\n", NULL);
         g_free(msg);
         msg = with_nl;
@@ -600,6 +598,7 @@ void append_event_message(const char *fmt, ...)
         1.0    /* yalign — 1.0 = bottom */
     );
 }
+
 
 // Memory+Log
 GtkWidget *create_memory_log_hbox()
@@ -635,14 +634,14 @@ GtkWidget *create_memory_log_hbox()
 gboolean on_popup_delete_event(GtkWidget *widget, GdkEvent *event, gpointer user_data)
 {
     gtk_window_close(GTK_WINDOW(widget)); // Close the window immediately
-    return TRUE;                          // Prevent default behavior
+    return TRUE; // Prevent default behavior
 }
-void on_set_arrival_time_clicked(GtkWidget *widget, gpointer user_data)
+void on_set_arrival_time_clicked(GtkButton *button, gpointer user_data)
 {
     SetButtonData *data = (SetButtonData *)user_data;
     GtkWidget *entry = data->entry;
     GtkWidget *popup_window = data->popup_window;
-    const char *filename = data->filename;
+    char *filename = data->filename;
 
     // Process the arrival time
     const gchar *text = gtk_entry_get_text(GTK_ENTRY(entry));
@@ -657,7 +656,7 @@ void on_set_arrival_time_clicked(GtkWidget *widget, gpointer user_data)
             arrival_time = value;
             g_print("Arrival time set to: %.2f\n", arrival_time);
             printf("Filename: %s\n", filename);
-            const char *only_filename = get_filename_from_path(filename);
+            char *only_filename = get_filename_from_path(filename);
             programList[total_processes].arrivalTime = arrival_time;
             programs_arrival_list[total_processes] = arrival_time;
             strcpy(programList[total_processes].programName, only_filename);
@@ -741,7 +740,7 @@ GtkWidget *create_process_config_hbox(GtkWidget *popup_window, const char *filen
     g_signal_connect(G_OBJECT(set_button), "clicked", G_CALLBACK(on_set_arrival_time_clicked), data);
 
     // Connect delete-event to prevent closing without valid input
-    // g_signal_connect(G_OBJECT(popup_window), "delete-event", G_CALLBACK(on_popup_delete_event), data);
+   //g_signal_connect(G_OBJECT(popup_window), "delete-event", G_CALLBACK(on_popup_delete_event), data);
 
     // Free data when the popup is destroyed
     g_signal_connect(G_OBJECT(popup_window), "destroy", G_CALLBACK(on_popup_destroy), data);
@@ -797,25 +796,11 @@ void append_instruction_log(const gchar *instruction, const gchar *pid, const gc
 void load_styles()
 {
     GtkCssProvider *provider = gtk_css_provider_new();
-    const char *css =
-        "window { background-color: #f5f5f5; }"
-        "button { background-color: #2196F3; color: white; border-radius: 4px; padding: 8px 16px; }"
-        "button:hover { background-color: #1976D2; }"
-        "button:active { background-color: #0D47A1; }"
-        "entry { padding: 8px; border-radius: 4px; border: 1px solid #BDBDBD; }"
-        "entry:focus { border-color: #2196F3; }"
-        "label { color: #424242; }"
-        "#title-label { font-size: 24px; font-weight: bold; color: #1976D2; margin: 20px 0; }"
-        "#dropdown-label, #processes-label { font-size: 16px; color: #424242; margin: 10px 0; }"
-        "frame { background-color: white; border-radius: 8px; padding: 10px; }"
-        "frame > label { color: #1976D2; font-weight: bold; }"
-        "treeview { background-color: white; border-radius: 4px; }"
-        "treeview:selected { background-color: #2196F3; color: white; }"
-        "scrollbar { background-color: #E0E0E0; }"
-        "scrollbar slider { background-color: #BDBDBD; }"
-        "scrollbar slider:hover { background-color: #9E9E9E; }";
 
-    gtk_css_provider_load_from_data(provider, css, -1, NULL);
+    if (!gtk_css_provider_load_from_path(provider, "style.css", NULL))
+    {
+        g_warning("Failed to load CSS file");
+    }
     gtk_style_context_add_provider_for_screen(
         gdk_screen_get_default(),
         GTK_STYLE_PROVIDER(provider),
@@ -835,7 +820,7 @@ static void on_entry_activate(GtkEntry *entry, gpointer user_data)
 // Create assign pop up
 char *create_input_dialog()
 {
-    GtkWidget *dialog = gtk_dialog_new_with_buttons(
+    GtkWidget *dialog = gtk_dialog_new_with_buttons(    
         "User Input",                                      // Title
         NULL,                                              // Parent window (NULL for no parent)
         GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT, // Dialog flags
@@ -912,17 +897,17 @@ void on_input_dialog_clicked(GtkButton *button, gpointer user_data)
 
 #include <gtk/gtk.h>
 
-// printfromto
+//printfromto
 void printPopUp(char *result)
 {
     // Create a new dialog window
     GtkWidget *dialog = gtk_dialog_new_with_buttons(
-        "Print Result",   // Title
-        NULL,             // Parent window (NULL for none)
-        GTK_DIALOG_MODAL, // Modal dialog
-        "_OK",            // Button label
-        GTK_RESPONSE_OK,  // Button response
-        NULL              // End of buttons
+        "Print Result",              // Title
+        NULL,                       // Parent window (NULL for none)
+        GTK_DIALOG_MODAL,           // Modal dialog
+        "_OK",                      // Button label
+        GTK_RESPONSE_OK,            // Button response
+        NULL                        // End of buttons
     );
 
     gtk_window_set_default_size(GTK_WINDOW(dialog), 400, 200);
@@ -950,6 +935,7 @@ void printPopUp(char *result)
     // Destroy the dialog after it's closed
     gtk_widget_destroy(dialog);
 }
+
 
 GtkWidget *create_fcfs_dashboard()
 {
@@ -1190,6 +1176,7 @@ void handle_file_confirmation(GtkWidget *file_chooser)
     gtk_widget_show_all(popup_window);
 }
 
+
 void on_add_process_clicked(GtkWidget *widget, gpointer data)
 {
     GtkWidget *dialog, *file_chooser;
@@ -1296,71 +1283,50 @@ GtkWidget *create_initial_window(GtkApplication *app)
     // Create initial window
     GtkWidget *initial_window = gtk_application_window_new(application);
     gtk_window_set_default_size(GTK_WINDOW(initial_window), 1500, 950);
-    gtk_window_set_title(GTK_WINDOW(initial_window), "Process Scheduler Simulation");
 
-    // Main container with padding
-    GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 30);
-    gtk_container_add(GTK_CONTAINER(initial_window), main_box);
-    gtk_container_set_border_width(GTK_CONTAINER(main_box), 40);
+    // frame
+    GtkWidget *initial_frame = gtk_frame_new(NULL);
+    gtk_container_add(GTK_CONTAINER(initial_window), initial_frame);
+    gtk_widget_set_margin_start(initial_frame, 20);
+    gtk_widget_set_margin_end(initial_frame, 20);
 
-    // Title with modern styling
-    GtkWidget *title_label = gtk_label_new("Process Scheduler Simulation");
+    GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 30);
+    gtk_container_add(GTK_CONTAINER(initial_frame), vbox);
+    gtk_box_set_homogeneous(GTK_BOX(vbox), FALSE);
+    gtk_container_set_border_width(GTK_CONTAINER(vbox), 20);
+
+    GtkWidget *title_label = gtk_label_new("Scheduler Simulation");
     gtk_widget_set_name(title_label, "title-label");
-    gtk_widget_set_halign(title_label, GTK_ALIGN_CENTER);
-    gtk_box_pack_start(GTK_BOX(main_box), title_label, FALSE, FALSE, 20);
 
-    // Scheduler selection section
-    GtkWidget *scheduler_frame = gtk_frame_new(NULL);
-    gtk_frame_set_label(GTK_FRAME(scheduler_frame), "Scheduler Configuration");
-    gtk_box_pack_start(GTK_BOX(main_box), scheduler_frame, FALSE, FALSE, 10);
+    gtk_box_pack_start(GTK_BOX(vbox), title_label, FALSE, FALSE, 0);
 
-    GtkWidget *scheduler_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
-    gtk_container_add(GTK_CONTAINER(scheduler_frame), scheduler_box);
-    gtk_container_set_border_width(GTK_CONTAINER(scheduler_box), 20);
-
-    GtkWidget *dropdown_label = gtk_label_new("Select Scheduling Algorithm:");
+    GtkWidget *dropdown_label = gtk_label_new("Which scheduler would you like to use for the simulation?");
     gtk_widget_set_name(dropdown_label, "dropdown-label");
-    gtk_box_pack_start(GTK_BOX(scheduler_box), dropdown_label, FALSE, FALSE, 5);
+    gtk_box_pack_start(GTK_BOX(vbox), dropdown_label, FALSE, FALSE, 0);
 
+    // Dropdown menu
     GtkWidget *dropdown_hbox = create_dropdown_with_quantum_input(&dropdown);
-    gtk_box_pack_start(GTK_BOX(scheduler_box), dropdown_hbox, FALSE, FALSE, 10);
+    gtk_box_pack_start(GTK_BOX(vbox), dropdown_hbox, FALSE, FALSE, 0);
 
-    // Process selection section
-    GtkWidget *process_frame = gtk_frame_new(NULL);
-    gtk_frame_set_label(GTK_FRAME(process_frame), "Process Management");
-    gtk_box_pack_start(GTK_BOX(main_box), process_frame, FALSE, FALSE, 10);
-
-    GtkWidget *process_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
-    gtk_container_add(GTK_CONTAINER(process_frame), process_box);
-    gtk_container_set_border_width(GTK_CONTAINER(process_box), 20);
-
-    GtkWidget *processes_label = gtk_label_new("Add Processes to Schedule:");
+    // Process
+    GtkWidget *processes_label = gtk_label_new("Which process(es) would you like to add?");
     gtk_widget_set_name(processes_label, "processes-label");
-    gtk_box_pack_start(GTK_BOX(process_box), processes_label, FALSE, FALSE, 5);
+    gtk_box_pack_start(GTK_BOX(vbox), processes_label, FALSE, FALSE, 0);
 
+    // Add Process Button
     GtkWidget *add_button = gtk_button_new_with_label("Add Process");
-    gtk_widget_set_size_request(add_button, 200, 40);
-    gtk_widget_set_halign(add_button, GTK_ALIGN_CENTER);
-    gtk_box_pack_start(GTK_BOX(process_box), add_button, FALSE, FALSE, 10);
+    gtk_widget_set_size_request(add_button, 120, 40);
+    gtk_widget_set_valign(add_button, GTK_ALIGN_CENTER);
+    gtk_box_pack_start(GTK_BOX(vbox), add_button, FALSE, FALSE, 0);
     g_signal_connect(add_button, "clicked", G_CALLBACK(on_add_process_clicked), initial_window);
 
-    // Simulation control section
-    GtkWidget *control_frame = gtk_frame_new(NULL);
-    gtk_frame_set_label(GTK_FRAME(control_frame), "Simulation Control");
-    gtk_box_pack_start(GTK_BOX(main_box), control_frame, FALSE, FALSE, 10);
-
-    GtkWidget *control_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
-    gtk_container_add(GTK_CONTAINER(control_frame), control_box);
-    gtk_container_set_border_width(GTK_CONTAINER(control_box), 20);
-
-    GtkWidget *simulate_btn = gtk_button_new_with_label("Start Simulation");
-    gtk_widget_set_size_request(simulate_btn, 250, 50);
-    gtk_widget_set_halign(simulate_btn, GTK_ALIGN_CENTER);
+    // Simulate button
+    GtkWidget *simulate_btn = gtk_button_new_with_label("Start Simulation!");
     g_signal_connect(simulate_btn, "clicked", G_CALLBACK(on_simulate_clicked), dropdown);
-    gtk_box_pack_start(GTK_BOX(control_box), simulate_btn, FALSE, FALSE, 10);
+    gtk_box_pack_start(GTK_BOX(vbox), simulate_btn, FALSE, FALSE, 0);
 
-    gtk_widget_show_all(initial_window);
-    gtk_widget_hide(quantum_button_box);
+    gtk_widget_set_halign(vbox, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign(vbox, GTK_ALIGN_CENTER);
 
     return initial_window;
 }
@@ -1516,6 +1482,7 @@ static void setup_main_window(GtkWidget *window)
 
     gtk_widget_show_all(window);
 }
+
 
 // Optional: Function to free process_list on application exit
 void free_process_list()
