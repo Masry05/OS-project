@@ -2,214 +2,228 @@
 
 /* ---------- Main Window ---------- */
 window {
-  background-color: #F5F5F5; 
-  color: #333333;           
+  background-color: #F8F9FA;
+  color: #212529;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
 /* ---------- Frames (Panels) ---------- */
 frame {
   background-color: #FFFFFF;
-  border: 1px solid #E0E0E0;  
-  border-radius: 8px;
-  padding: 12px;
-  margin: 12px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);  
+  border: 1px solid #E9ECEF;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 16px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
+}
+
+frame:hover {
+  box-shadow: 0 6px 12px rgba(0,0,0,0.08);
 }
 
 /* ---------- Buttons ---------- */
 button {
   background-color: #FFFFFF;
-  color: #333333;
-  border: 1px solid #E0E0E0;
-  border-radius: 6px;
-  padding: 8px 16px;
-  font-weight: 600;           
-  transition: all 0.2s ease;  /* Smooth hover effects */
+  color: #495057;
+  border: 1px solid #DEE2E6;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  cursor: pointer;
 }
 
 button:hover {
-  background-color: #F0F0F0;
-  border-color: #CCCCCC;
+  background-color: #F8F9FA;
+  border-color: #ADB5BD;
+  transform: translateY(-1px);
 }
 
 button:active {
-  background-color: #E0E0E0;
+  background-color: #E9ECEF;
+  transform: translateY(0);
 }
 
 /* ---------- Entry Fields ---------- */
 entry {
   background-color: #FFFFFF;
-  color: #333333;
-  border: 1px solid #E0E0E0;
-  border-radius: 4px;
-  padding: 8px 12px;
+  color: #495057;
+  border: 1px solid #DEE2E6;
+  border-radius: 8px;
+  padding: 10px 16px;
   min-width: 200px;
+  transition: all 0.2s ease;
 }
 
 entry:focus {
-  border-color: #666666;
-  box-shadow: 0 0 0 1px #666666;
+  border-color: #4DABF7;
+  box-shadow: 0 0 0 3px rgba(77, 171, 247, 0.15);
+  outline: none;
 }
 
 /* ---------- TreeViews ---------- */
 treeview {
-  background-color: white;
-  border: 1px solid #D0D0D0;
-  font-family: sans-serif;
+  background-color: #FFFFFF;
+  border: 1px solid #E9ECEF;
+  border-radius: 8px;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
 /* Grid lines */
 treeview.view {
   -GtkTreeView-grid-line-width: 1;
-  -GtkTreeView-grid-line-pattern: "\1"; 
-  -GtkTreeView-grid-line-color: #E0E0E0;
+  -GtkTreeView-grid-line-pattern: "\1";
+  -GtkTreeView-grid-line-color: #E9ECEF;
 }
 
 /* Header row */
 treeview.view header {
-  background-color: #F5F5F5;
-  border-bottom: 2px solid #D0D0D0;
+  background-color: #F8F9FA;
+  border-bottom: 2px solid #DEE2E6;
+  padding: 8px 0;
 }
 
-/* Column headers - remove button appearance */
+/* Column headers */
 treeview.view header button {
-  padding: 6px 12px;
-  border-right: 1px solid #D0D0D0;
+  padding: 8px 16px;
+  border-right: 1px solid #DEE2E6;
   background: none;
   box-shadow: none;
   border-image: none;
   border-radius: 0;
+  font-weight: 600;
+  color: #495057;
 }
 
-/* Regular cells - remove button appearance */
+/* Regular cells */
 treeview.view cell {
   background: none;
   border-image: none;
   box-shadow: none;
-  padding: 4px 8px;
+  padding: 8px 16px;
+  color: #495057;
 }
 
-/* Selected row - subtle darker gray */
+/* Selected row */
 treeview.view:selected,
 treeview.view:selected:focus {
-  background-color: #E8E8E8; 
-  color: #000000;           
+  background-color: #E7F5FF;
+  color: #1971C2;
 }
 
-/* Hover effect - lighter than selection */
+/* Hover effect */
 treeview.view row:hover {
-  background-color: #F0F0F0;
+  background-color: #F8F9FA;
 }
 
-/* Optional: Remove selection border */
-treeview.view:selected {
-  box-shadow: none;
-  outline: none;
-}
-
-/* ---------- All Labels ---------- */
+/* ---------- Labels ---------- */
 label {
-  color: #333333;          /* dark gray text */
-  font-family: sans-serif;
+  color: #495057;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
 /* ---------- Title Label ---------- */
-/* Title label style */
 #title-label {
-  font-size: 36px;                  /* Large font size */
-  font-weight: bold;                /* Bold font */
-  color: #222222;                   /* Almost black text color */
-  letter-spacing: 1px;              /* Slight letter spacing */
-  padding-bottom: 8px;              /* Space under the text */
-  border-bottom: 2px solid #CCCCCC; /* Light gray underline */
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1); /* Subtle shadow effect */
-  margin-bottom: 20px;              /* Space after the title */
-  font-family: "Sans", sans-serif;  /* Sans-serif font family */
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #212529;
+  letter-spacing: -0.5px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #E9ECEF;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  margin-bottom: 24px;
 }
 
-
-/* ---------- Section Labels (dropdown, processes) ---------- */
+/* ---------- Section Labels ---------- */
 #dropdown-label,
 #processes-label {
-  font-size: 18px;         /* medium */
-  font-weight: 600;        /* semi-bold */
-  margin-top: 12px;        /* space above */
-  margin-bottom: 8px;      /* space below */
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #495057;
+  margin-top: 16px;
+  margin-bottom: 12px;
 }
 
-/* ---------- Section Labels (dropdown, processes) ---------- */
-#dropdown-label,
-#processes-label {
-  font-size: 18px;         /* medium */
-  font-weight: 600;        /* semi-bold */
-  margin-top: 12px;        /* space above */
-  margin-bottom: 8px;      /* space below */
-}
-
-/* The whole row (HBox) — black outer border */
+/* ---------- Queue Row ---------- */
 #queue-row {
-  border: 2px solid #000;
-  background-color: #ffffff;
-  padding: 5px;
-  margin: 5px;
+  border: 2px solid #E9ECEF;
+  background-color: #FFFFFF;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
-/* Columns inside the row — vertical borders */
 .column-box {
-  border-right: 1px solid #000;
-  padding: 5px;
+  border-right: 1px solid #E9ECEF;
+  padding: 8px 16px;
 }
 
-/* Last column — no right border */
 .column-box:last-child {
   border-right: none;
 }
 
-/* Headers column — light grey background */
 #headers-column {
-  background-color: #d3d3d3;
+  background-color: #F8F9FA;
+  border-radius: 6px 0 0 6px;
 }
 
-/* Header labels */
 #queue-header-label {
-  font-weight: bold;
-  padding: 5px 10px;
-  color: #000000;
+  font-weight: 600;
+  color: #495057;
+  padding: 8px 16px;
 }
 
-/* Data labels */
 #queue-data-label {
-  background-color: #ffffff;
-  padding: 5px 10px;
-  color: #000000;
+  background-color: #FFFFFF;
+  padding: 8px 16px;
+  color: #495057;
 }
 
-/* (Optional: empty columns — same style as data) */
 #queue-empty-column {
-  background-color: #ffffff;
-  padding: 5px 10px;
-  color: #000000;
+  background-color: #FFFFFF;
+  padding: 8px 16px;
+  color: #ADB5BD;
 }
 
+/* ---------- Separator ---------- */
 separator {
-  background-color: #000000;
+  background-color: #E9ECEF;
   min-width: 1px;
-  margin: 0px;
+  margin: 0;
 }
 
+/* ---------- Dialog ---------- */
 .dialog {
-  background-color: #f5f5f5;
-  border: 1px solid #ccc;
+  background-color: #FFFFFF;
+  border: 1px solid #E9ECEF;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
+
 .entry {
-  padding: 5px;
-  border: 1px solid #999;
-  border-radius: 3px;
+  padding: 8px 12px;
+  border: 1px solid #DEE2E6;
+  border-radius: 8px;
+  transition: all 0.2s ease;
 }
+
+.entry:focus {
+  border-color: #4DABF7;
+  box-shadow: 0 0 0 3px rgba(77, 171, 247, 0.15);
+}
+
 .label {
-  font-size: 12px;
+  font-size: 0.875rem;
+  color: #495057;
 }
+
 #process-list-scrolled {
-  min-height: 120px;
+  min-height: 150px;
+  border: 1px solid #E9ECEF;
+  border-radius: 8px;
+  padding: 8px;
+  background-color: #FFFFFF;
 }
 

@@ -26,7 +26,7 @@ extern int total_processes;
 extern int RR_quantum;
 extern SCHEDULING_ALGORITHM algo;
 extern bool stepper;
-extern bool alreadyRunning = false;
+extern bool alreadyRunning;
 int clockcycles = 0;
 int completed = 0;
 
@@ -727,7 +727,7 @@ bool can_execute_instruction(int program)
     }
 
     Resources tmp = getResourceType(program);
-    if (tmp == NULL)
+    if (tmp == (Resources)-1)
     {
         return true;
     }
@@ -984,7 +984,7 @@ void RR_algo()
 //         }
 
 //         //
-//         // 3) Execute one tick if someone’s running
+//         // 3) Execute one tick if someone's running
 //         //
 //         if (running != -1)
 //         {
@@ -992,7 +992,7 @@ void RR_algo()
 //             int pc  = atoi(memory[programStartIndex[running] + 3].value);
 //             char message[256];
 
-//             // “trying” log
+//             // "trying" log
 //             snprintf(message, sizeof(message),
 //                      "trying    => clockcycles %2d: Running prog %d, PC=%d, instr='%s'\n",
 //                      clockcycles, running, pc, memory[pc].value);
@@ -1002,7 +1002,7 @@ void RR_algo()
 
 //             if (can_execute_instruction(running))
 //             {
-//                 // “executing” log
+//                 // "executing" log
 //                 snprintf(message, sizeof(message),
 //                          "executing => clockcycles %2d: Running prog %d, PC=%d, instr='%s'\n",
 //                          clockcycles, running, pc, memory[pc].value);
