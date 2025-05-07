@@ -800,7 +800,7 @@ void FCFS_algo()
 void RR_algo()
 {
     static int current_quanta = 0;
-    static int current_process = 0;
+    static int current_process = -1;
     alreadyRunning = true;
     // check arrivals first then move just executed process to back of queue
 
@@ -864,6 +864,8 @@ void RR_algo()
                     dequeue(readyQueue);
                     current_quanta = 0;
                     completed++;
+                    current_process = -1;
+
                 }
                 else
                 {
@@ -873,6 +875,7 @@ void RR_algo()
                         int tmp = dequeue(readyQueue);
                         enqueue(readyQueue, tmp, atoi(memory[programStartIndex[tmp] + 2].value));
                         current_quanta = 0;
+                        current_process = peek(readyQueue);
                     }
                 }
                 clockcycles++;
@@ -890,20 +893,24 @@ void RR_algo()
             // if we cant execute an instruction it must be due to resource blocking so we must place in the appropriate blocked queue
             else
             {
+                //printf("BLOCKED  → pid=%d \n", current_process);
+                snprintf(message, sizeof(message),
+                         "BLOCKED  → pid=%d\n",
+                         current_process);
+                message[strcspn(message, "\n")] = '\0'; // Remove newline character
+                printf("%s", message);
+                addEventMessage(message);
+
                 int tmp = dequeue(readyQueue);
                 enqueue(get_blocking_queue(current_process), tmp, atoi(memory[programStartIndex[tmp] + 2].value));
                 current_quanta = 0;
+                clockcycles++;
+                update();
             }
         }
         else
         {
             clockcycles++;
-            // printQueue(readyQueue, -1);
-            // for (size_t i = 0; i < 3; i++)
-            // {
-            //     printf("Blocking %d=> ", i);
-            //     printQueue(BlockingQueues[i], -1);
-            // }
             update();
             if (stepper)
             {
