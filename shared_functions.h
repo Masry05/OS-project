@@ -10,6 +10,7 @@ void reset_execution(GtkWidget *widget, gpointer user_data);
 void reset_all();
 void intialize_dashboard();
 void update_pcb();
+void backButtonPressed();
 
 // Declare setup function
 

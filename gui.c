@@ -1333,7 +1333,7 @@ GtkWidget *create_initial_window(GtkApplication *app)
 void on_back_button_clicked(GtkButton *button, gpointer user_data)
 {
     g_print("Back button clicked\n");
-
+    backButtonPressed();
     // Ensure main_window and application are valid
     if (!main_window || !application)
     {

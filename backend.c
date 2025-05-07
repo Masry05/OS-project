@@ -170,7 +170,7 @@ void PopulateMemory()
         strcpy(memory[programStartIndex[i] + 7].value2, "");
 
         char filename[MAX_STRING_LENGTH];
-        snprintf(filename, MAX_STRING_LENGTH, "./Programs/Program_%d.txt", (i + 1));
+        snprintf(filename, MAX_STRING_LENGTH, "./Programs/%s", programList[i].programName);
         currentStartIndex = fillInstructions(filename, (programStartIndex[i] + 8));
         snprintf(memory[programStartIndex[i] + 4].value2, MAX_STRING_LENGTH, "%d", currentStartIndex - 1);
         if (currentStartIndex == -1)
@@ -452,7 +452,7 @@ void printFromTo(int program, const char *var1, const char *var2)
 
     // After the loop, you can print the result or use it as needed
     printf("%s\n", result);
-    printFromToGUI(result); 
+    printFromToGUI(result);
 }
 
 Resources getResourceType(int program)
@@ -509,15 +509,14 @@ bool executeInstruction(int program)
         printf("\n");
         printVar(program, splittedInstruction[1]);
         char prog_buf[12];
-        snprintf(prog_buf, sizeof prog_buf, "%d", program); 
-        updateExecutionLog( instruction,prog_buf , "");
-
+        snprintf(prog_buf, sizeof prog_buf, "%d", program);
+        updateExecutionLog(instruction, prog_buf, "");
     }
     else if (strcmp(splittedInstruction[0], "assign") == 0)
     {
         char prog_buf[12];
-        snprintf(prog_buf, sizeof prog_buf, "%d", program); 
-        updateExecutionLog( instruction, prog_buf , "");
+        snprintf(prog_buf, sizeof prog_buf, "%d", program);
+        updateExecutionLog(instruction, prog_buf, "");
         printf("Instruction: %s, Arguments: ", splittedInstruction[0]);
         for (int i = 1; i < instructionCount; i++)
         {
@@ -549,9 +548,8 @@ bool executeInstruction(int program)
         printf("\n");
         writeFile(program, splittedInstruction[1], splittedInstruction[2]);
         char prog_buf[12];
-        snprintf(prog_buf, sizeof prog_buf, "%d", program); 
-        updateExecutionLog( instruction,prog_buf , ("Wrote to:  %s\n", splittedInstruction[1]) );
-
+        snprintf(prog_buf, sizeof prog_buf, "%d", program);
+        updateExecutionLog(instruction, prog_buf, ("Wrote to:  %s\n", splittedInstruction[1]));
     }
     else if (strcmp(splittedInstruction[0], "readFile") == 0)
     {
@@ -563,9 +561,8 @@ bool executeInstruction(int program)
         printf("\n");
         readFile(program, splittedInstruction[1]);
         char prog_buf[12];
-        snprintf(prog_buf, sizeof prog_buf, "%d", program); 
-        updateExecutionLog( instruction,prog_buf , ("Read from: %s", splittedInstruction[1]) );
-
+        snprintf(prog_buf, sizeof prog_buf, "%d", program);
+        updateExecutionLog(instruction, prog_buf, ("Read from: %s", splittedInstruction[1]));
     }
     else if (strcmp(splittedInstruction[0], "printFromTo") == 0)
     {
@@ -577,9 +574,8 @@ bool executeInstruction(int program)
         printf("\n");
         printFromTo(program, splittedInstruction[1], splittedInstruction[2]);
         char prog_buf[12];
-        snprintf(prog_buf, sizeof prog_buf, "%d", program); 
-        updateExecutionLog( instruction,prog_buf ,"");
-
+        snprintf(prog_buf, sizeof prog_buf, "%d", program);
+        updateExecutionLog(instruction, prog_buf, "");
     }
     else if (strcmp(splittedInstruction[0], "semWait") == 0)
     {
@@ -612,10 +608,9 @@ bool executeInstruction(int program)
         snprintf(prog_buf, sizeof prog_buf, "%d", program);
         char reac_buf[64];
         snprintf(reac_buf, sizeof(reac_buf),
-                "Acquired Resource: %s",
-                resource); 
-        updateExecutionLog( instruction,prog_buf, reac_buf ) ;
-
+                 "Acquired Resource: %s",
+                 resource);
+        updateExecutionLog(instruction, prog_buf, reac_buf);
     }
     else if (strcmp(splittedInstruction[0], "semSignal") == 0)
     {
@@ -632,7 +627,7 @@ bool executeInstruction(int program)
 
         if (algo != MLFQ)
         {
-            
+
             if (peek(BlockingQueues[tmp]) != -1)
             {
                 int tmp2 = dequeue(BlockingQueues[tmp]);
@@ -643,7 +638,6 @@ bool executeInstruction(int program)
                 Resources_availability[tmp] = true;
                 updateMutex(program, tmp, true);
             }
-            
         }
         else
         {
@@ -651,16 +645,18 @@ bool executeInstruction(int program)
             if (peek(BlockingQueues[tmp]) != -1)
             {
                 int tmp2 = dequeue(BlockingQueues[tmp]);
-                int pc = atoi(memory[programStartIndex[tmp2]+3].value);
-                snprintf(memory[programStartIndex[tmp2]+3].value, MAX_STRING_LENGTH, "%d", ++pc);
+                int pc = atoi(memory[programStartIndex[tmp2] + 3].value);
+                snprintf(memory[programStartIndex[tmp2] + 3].value, MAX_STRING_LENGTH, "%d", ++pc);
                 Resources_availability[tmp] = false;
                 updateMutex(program, tmp, false);
                 flag = false;
                 if (rem_quantum[tmp2] == 1)
                 {
-                   curr_level[tmp2]++;
+                    curr_level[tmp2]++;
                     rem_quantum[tmp2] = quantum_per_level[curr_level[tmp2]];
-                }else{
+                }
+                else
+                {
                     rem_quantum[tmp2]--;
                 }
                 enqueue(MLFQ_queues[curr_level[tmp2]], tmp2, curr_level[tmp2]);
@@ -670,7 +666,6 @@ bool executeInstruction(int program)
                 Resources_availability[tmp] = true;
                 updateMutex(program, tmp, true);
             }
-           
         }
 
         char *resource = NULL;
@@ -692,10 +687,9 @@ bool executeInstruction(int program)
         snprintf(prog_buf, sizeof prog_buf, "%d", program);
         char reac_buf[64];
         snprintf(reac_buf, sizeof(reac_buf),
-                "Freed Resource: %s",
-                resource); 
-        updateExecutionLog( instruction, prog_buf, reac_buf);
-
+                 "Freed Resource: %s",
+                 resource);
+        updateExecutionLog(instruction, prog_buf, reac_buf);
     }
     else
     {
@@ -768,7 +762,8 @@ void FCFS_algo()
         }
         // execute the process that has its turn
         if (peek(readyQueue) != -1)
-        {    char message[256]; 
+        {
+            char message[256];
 
             int pc = atoi(memory[programStartIndex[peek(readyQueue)] + 3].value);
             snprintf(message, sizeof(message),
@@ -778,8 +773,8 @@ void FCFS_algo()
                      pc,
                      memory[pc].value);
             message[strcspn(message, "\n")] = '\0'; // Remove newline character
-             printf("%s", message);
-             addEventMessage(message);
+            printf("%s", message);
+            addEventMessage(message);
             if (executeInstruction(peek(readyQueue)))
             {
                 dequeue(readyQueue);
@@ -836,29 +831,29 @@ void RR_algo()
             // printf("trying    =>clockcycles %2d: Running prog %d, PC=%d, instr='%s'\n", clockcycles, current_process, pc, memory[pc].value);
             char message[256];
             snprintf(message, sizeof(message),
-                    "trying    => clockcycles %2d: Running prog %d, PC=%d, instr='%s' \n",
-                    clockcycles,
-                    current_process,
-                    pc,
-                    memory[pc].value);
+                     "trying    => clockcycles %2d: Running prog %d, PC=%d, instr='%s' \n",
+                     clockcycles,
+                     current_process,
+                     pc,
+                     memory[pc].value);
             message[strcspn(message, "\n")] = '\0'; // Remove newline character
             printf("%s\n", message);
             addEventMessage(message);
-            
+
             // Print out the ready queue
 
             if (can_execute_instruction(current_process))
             {
                 int pc = atoi(memory[programStartIndex[current_process] + 3].value);
-                
-               // printf("executing =>clockcycles %2d: Running prog %d, PC=%d, instr='%s'\n", clockcycles, current_process, pc, memory[pc].value);
-               char message[256]; 
-               snprintf(message, sizeof(message),
-                        "executing =>clockcycles %2d: Running prog %d, PC=%d, instr='%s'\n",
-                        clockcycles,
-                        current_process,
-                        pc,
-                        memory[pc].value);
+
+                // printf("executing =>clockcycles %2d: Running prog %d, PC=%d, instr='%s'\n", clockcycles, current_process, pc, memory[pc].value);
+                char message[256];
+                snprintf(message, sizeof(message),
+                         "executing =>clockcycles %2d: Running prog %d, PC=%d, instr='%s'\n",
+                         clockcycles,
+                         current_process,
+                         pc,
+                         memory[pc].value);
                 message[strcspn(message, "\n")] = '\0'; // Remove newline character
                 printf("%s", message);
 
@@ -922,8 +917,6 @@ void RR_algo()
     }
     printf("[DONE] All %d progs done clockcycles %d\n", total_processes, clockcycles);
 }
-
-
 
 // void MLFQ_algo()
 // {
@@ -1088,10 +1081,9 @@ void RR_algo()
 //            total_processes, clockcycles);
 // }
 
-
 /*
 1. 7aga tetla3 men el blocking queuue tekhosh 3ala el instruction elly ba3daha
-2. lama tetla3 men el blocking queue: 
+2. lama tetla3 men el blocking queue:
     a. quanta khelset => queue elly ba3daha
     b. quanta ma khelsetsh => hanreset el quanta
 3. getting blocked and executing the blocked statement is in the same cycle
@@ -1120,7 +1112,6 @@ void MLFQ_algo()
         }
         alreadyRunning = true;
     }
-    
 
     while (completed < total_processes)
     {
@@ -1137,46 +1128,47 @@ void MLFQ_algo()
             }
         }
 
-
         // —— dispatch if CPU is free ——
-        if (running == -1) {
-            for (int lvl = 0; lvl < num_levels; ++lvl) {
-                    if (!isEmpty(MLFQ_queues[lvl])) {
-                            running = peek(MLFQ_queues[lvl]);
-                            if (rem_quantum[running] == 0)
-                                    rem_quantum[running] = quantum_per_level[lvl];
-                            curr_level[running] = lvl;
-                            printf("[C=%3d] DISPATCH → pid=%d from Q%d rem_q=%d\n",
-                                clockcycles, running, lvl, rem_quantum[running]);
-                            break;
-                    }
+        if (running == -1)
+        {
+            for (int lvl = 0; lvl < num_levels; ++lvl)
+            {
+                if (!isEmpty(MLFQ_queues[lvl]))
+                {
+                    running = peek(MLFQ_queues[lvl]);
+                    if (rem_quantum[running] == 0)
+                        rem_quantum[running] = quantum_per_level[lvl];
+                    curr_level[running] = lvl;
+                    printf("[C=%3d] DISPATCH → pid=%d from Q%d rem_q=%d\n",
+                           clockcycles, running, lvl, rem_quantum[running]);
+                    break;
+                }
             }
         }
 
-
         // —— execute one time unit ——
         if (running != -1)
-        {   
+        {
             int lvl = curr_level[running];
             int pc = atoi(memory[programStartIndex[running] + 3].value);
-            //printf("trying    => clockcycles %2d: Running prog %d, PC=%d, instr='%s'\n", clockcycles, running, pc, memory[pc].value);
-           
+            // printf("trying    => clockcycles %2d: Running prog %d, PC=%d, instr='%s'\n", clockcycles, running, pc, memory[pc].value);
+
             char message[256];
             snprintf(message, sizeof(message),
-                    "trying    => clockcycles %2d: Running prog %d, PC=%d, instr='%s'\n",
-                    clockcycles,
-                    running,
-                    pc,
-                    memory[pc].value);
+                     "trying    => clockcycles %2d: Running prog %d, PC=%d, instr='%s'\n",
+                     clockcycles,
+                     running,
+                     pc,
+                     memory[pc].value);
             message[strcspn(message, "\n")] = '\0'; // Remove newline character
             printf("%s\n", message);
             addEventMessage(message);
 
             if (can_execute_instruction(running))
             {
-   
-                //printf("executing    => clockcycles %2d: Running prog %d, PC=%d, instr='%s'\n", clockcycles, running, pc, memory[pc].value);
-                char message[256]; 
+
+                // printf("executing    => clockcycles %2d: Running prog %d, PC=%d, instr='%s'\n", clockcycles, running, pc, memory[pc].value);
+                char message[256];
                 snprintf(message, sizeof(message),
                          "executing =>clockcycles %2d: Running prog %d, PC=%d, instr='%s'\n",
                          clockcycles,
@@ -1184,8 +1176,8 @@ void MLFQ_algo()
                          pc,
                          memory[pc].value);
                 message[strcspn(message, "\n")] = '\0'; // Remove newline character
-                 printf("%s", message);
-                 addEventMessage(message);
+                printf("%s", message);
+                addEventMessage(message);
                 if (executeInstruction(running))
                 {
                     dequeue(MLFQ_queues[lvl]);
@@ -1220,15 +1212,15 @@ void MLFQ_algo()
             else
             {
                 // enqueue the process in the appropriate blocking queue
-                
+
                 int tmp = dequeue(MLFQ_queues[lvl]);
                 enqueue(get_blocking_queue(running), tmp, atoi(memory[programStartIndex[tmp] + 2].value));
-               
+
                 printf("BLOCKED  → pid=%d in Q%d\n", running, lvl);
                 snprintf(message, sizeof(message),
-                        "BLOCKED  → pid=%d in Q%d\n",
-                        running,
-                        lvl);
+                         "BLOCKED  → pid=%d in Q%d\n",
+                         running,
+                         lvl);
                 message[strcspn(message, "\n")] = '\0'; // Remove newline character
                 printf("%s", message);
                 addEventMessage(message);
@@ -1236,9 +1228,12 @@ void MLFQ_algo()
                 running = -1;
                 clockcycles++;
                 update();
-                if (stepper){
-                    break;   
-                }else{
+                if (stepper)
+                {
+                    break;
+                }
+                else
+                {
                     continue;
                 }
             }
@@ -1308,7 +1303,7 @@ void scheduler()
 
 void reset_all()
 {
-    //int RR_quantum = 0;
+    // int RR_quantum = 0;
     stepper = false;
     alreadyRunning = false;
     clockcycles = 0;
@@ -1343,7 +1338,6 @@ void reset_all()
     Resources_availability[0] = true;
     Resources_availability[1] = true;
     Resources_availability[2] = true;
-    
 
     PopulateMemory();
 }

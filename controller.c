@@ -118,16 +118,17 @@ void update_memory()
 
 // void append_instruction_log(const gchar *instruction, const gchar *pid, const gchar *reaction)
 
-
-void updateExecutionLog(const gchar *instruction, const gchar *pid, const gchar *reaction){
+void updateExecutionLog(const gchar *instruction, const gchar *pid, const gchar *reaction)
+{
 
     append_instruction_log(instruction, pid, reaction);
 }
 
-
-void addEventMessage(char *message){
+void addEventMessage(char *message)
+{
     append_event_message(message);
 }
+
 void updateMutex(int program, int resource, bool status)
 {
     char *resource_name;
@@ -244,6 +245,9 @@ void reset_execution(GtkWidget *widget, gpointer user_data)
     reset_all();
     update();
     gtk_list_store_clear(mutex_status_store);
+    gtk_list_store_clear(log_store);
+    append_event_message("Execution reset.\n");
+    // gtk_list_store_clear(process_instructions_store);
 }
 
 void set_scheduler(GtkWidget *widget)
@@ -286,6 +290,13 @@ void set_scheduler(GtkWidget *widget)
             g_print("ComboBoxText has no selection.\n");
         }
     }
+}
+
+void backButtonPressed()
+{
+    reset_execution(NULL, NULL);
+    update_pcb();
+    update_memory();
 }
 
 static void activate(GtkApplication *app, gpointer user_data)
