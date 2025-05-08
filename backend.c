@@ -924,7 +924,6 @@ void RR_algo()
                 message[strcspn(message, "\n")] = '\0'; // Remove newline character
                 printf("%s", message);
                 addEventMessage(message);
-                addEventMessage("what the hell el mafrood blocked");
 
                 
                 int tmp = dequeue(readyQueue);

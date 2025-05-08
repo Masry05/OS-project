@@ -7,4 +7,3 @@ semSignal file
 semWait userOutput
 print b
 semSignal userOutput
-
