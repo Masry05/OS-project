@@ -30,6 +30,7 @@ extern bool alreadyRunning = false;
 int clockcycles = 0;
 int completed = 0;
 
+bool didInsert = false;
 // initializnig global queues for simple access
 MemQueue readyQueueNotPtr;
 MemQueue *readyQueue;
@@ -634,7 +635,15 @@ bool executeInstruction(int program)
             if (peek(BlockingQueues[tmp]) != -1)
             {
                 int tmp2 = dequeue(BlockingQueues[tmp]);
-                enqueue(readyQueue, tmp2, atoi(memory[programStartIndex[tmp2] + 2].value));
+                if (didInsert){
+                    int tmpAkheer = dequeueBack(readyQueue);
+                    enqueue(readyQueue, tmp2, atoi(memory[programStartIndex[tmp2] + 2].value));
+                    enqueue(readyQueue, tmpAkheer, atoi(memory[programStartIndex[tmpAkheer] + 2].value));
+                    printQueue(readyQueue, -1);
+                }else {
+
+                    enqueue(readyQueue, tmp2, atoi(memory[programStartIndex[tmp2] + 2].value));
+                }
             }
             if (peek(BlockingQueues[tmp]) == -1)
             {
@@ -819,6 +828,7 @@ void RR_algo()
 
     while (completed < total_processes)
     {
+        didInsert = false;
         for (int i = 0; i < total_processes; i++)
         {
             // checking if a program should be added into memory
@@ -826,6 +836,7 @@ void RR_algo()
             {
                 enqueue(readyQueue, atoi(memory[programStartIndex[i]].value), atoi(memory[programStartIndex[i] + 2].value));
                 programList[i].arrivalTime = -1;
+                didInsert = true;
             }
         }
 
@@ -913,12 +924,18 @@ void RR_algo()
                 message[strcspn(message, "\n")] = '\0'; // Remove newline character
                 printf("%s", message);
                 addEventMessage(message);
+                addEventMessage("what the hell el mafrood blocked");
 
+                
                 int tmp = dequeue(readyQueue);
-                enqueue(get_blocking_queue(current_process), tmp, atoi(memory[programStartIndex[tmp] + 2].value));
+                enqueue(get_blocking_queue(tmp), tmp, atoi(memory[programStartIndex[tmp] + 2].value));
                 current_quanta = 0;
                 clockcycles++;
                 update();
+                if (stepper)
+                {
+                    break;
+                }
             }
         }
         else

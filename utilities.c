@@ -186,3 +186,16 @@ void printQueue(MemQueue *q, int qid) {
     }
     printf("\n");
 }
+
+
+/**
+ * Pop the tail element of the internal array (not by priority).
+ * Useful if you just want a pure “stack” pop of the last slot.
+ */
+int dequeueBack(MemQueue *q) {
+    if (isEmpty(q)) {
+        fprintf(stderr, "PriorityQueue is empty\n");
+        return -1;
+    }
+    return q->items[--q->size].ptr;
+}
