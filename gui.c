@@ -563,11 +563,10 @@ GtkWidget *create_log_console_panel()
     return log_console_vbox;
 }
 
-
 void append_event_message(const char *fmt, ...)
 {
     va_list args;
-    gchar  *msg;
+    gchar *msg;
     GtkTextIter end;
 
     /* build your formatted string */
@@ -576,7 +575,8 @@ void append_event_message(const char *fmt, ...)
     va_end(args);
 
     /* make sure it ends in a newline */
-    if (!g_str_has_suffix(msg, "\n")) {
+    if (!g_str_has_suffix(msg, "\n"))
+    {
         gchar *with_nl = g_strconcat(msg, "\n", NULL);
         g_free(msg);
         msg = with_nl;
@@ -598,7 +598,6 @@ void append_event_message(const char *fmt, ...)
         1.0    /* yalign — 1.0 = bottom */
     );
 }
-
 
 // Memory+Log
 GtkWidget *create_memory_log_hbox()
@@ -634,7 +633,7 @@ GtkWidget *create_memory_log_hbox()
 gboolean on_popup_delete_event(GtkWidget *widget, GdkEvent *event, gpointer user_data)
 {
     gtk_window_close(GTK_WINDOW(widget)); // Close the window immediately
-    return TRUE; // Prevent default behavior
+    return TRUE;                          // Prevent default behavior
 }
 void on_set_arrival_time_clicked(GtkButton *button, gpointer user_data)
 {
@@ -740,7 +739,7 @@ GtkWidget *create_process_config_hbox(GtkWidget *popup_window, const char *filen
     g_signal_connect(G_OBJECT(set_button), "clicked", G_CALLBACK(on_set_arrival_time_clicked), data);
 
     // Connect delete-event to prevent closing without valid input
-   //g_signal_connect(G_OBJECT(popup_window), "delete-event", G_CALLBACK(on_popup_delete_event), data);
+    // g_signal_connect(G_OBJECT(popup_window), "delete-event", G_CALLBACK(on_popup_delete_event), data);
 
     // Free data when the popup is destroyed
     g_signal_connect(G_OBJECT(popup_window), "destroy", G_CALLBACK(on_popup_destroy), data);
@@ -820,7 +819,7 @@ static void on_entry_activate(GtkEntry *entry, gpointer user_data)
 // Create assign pop up
 char *create_input_dialog()
 {
-    GtkWidget *dialog = gtk_dialog_new_with_buttons(    
+    GtkWidget *dialog = gtk_dialog_new_with_buttons(
         "User Input",                                      // Title
         NULL,                                              // Parent window (NULL for no parent)
         GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT, // Dialog flags
@@ -897,17 +896,17 @@ void on_input_dialog_clicked(GtkButton *button, gpointer user_data)
 
 #include <gtk/gtk.h>
 
-//printfromto
+// printfromto
 void printPopUp(char *result)
 {
     // Create a new dialog window
     GtkWidget *dialog = gtk_dialog_new_with_buttons(
-        "Print Result",              // Title
-        NULL,                       // Parent window (NULL for none)
-        GTK_DIALOG_MODAL,           // Modal dialog
-        "_OK",                      // Button label
-        GTK_RESPONSE_OK,            // Button response
-        NULL                        // End of buttons
+        "Print Result",   // Title
+        NULL,             // Parent window (NULL for none)
+        GTK_DIALOG_MODAL, // Modal dialog
+        "_OK",            // Button label
+        GTK_RESPONSE_OK,  // Button response
+        NULL              // End of buttons
     );
 
     gtk_window_set_default_size(GTK_WINDOW(dialog), 400, 200);
@@ -935,7 +934,6 @@ void printPopUp(char *result)
     // Destroy the dialog after it's closed
     gtk_widget_destroy(dialog);
 }
-
 
 GtkWidget *create_fcfs_dashboard()
 {
@@ -1175,7 +1173,6 @@ void handle_file_confirmation(GtkWidget *file_chooser)
     g_free(filename);
     gtk_widget_show_all(popup_window);
 }
-
 
 void on_add_process_clicked(GtkWidget *widget, gpointer data)
 {
@@ -1461,8 +1458,8 @@ static void setup_main_window(GtkWidget *window)
     gtk_frame_set_shadow_type(GTK_FRAME(execution_frame), GTK_SHADOW_IN);
     gtk_widget_set_size_request(execution_frame, -1, 50);
     gtk_box_pack_start(GTK_BOX(main_container), execution_frame, FALSE, FALSE, 0);
-    GtkWidget *execution_hbox = create_execution_hbox();
-    gtk_container_add(GTK_CONTAINER(execution_frame), execution_hbox);
+    // GtkWidget *execution_hbox = create_execution_hbox();
+    // gtk_container_add(GTK_CONTAINER(execution_frame), execution_hbox);
 
     // Update UI with process information
     if (label_total_procs_value && GTK_IS_LABEL(label_total_procs_value))
@@ -1482,7 +1479,6 @@ static void setup_main_window(GtkWidget *window)
 
     gtk_widget_show_all(window);
 }
-
 
 // Optional: Function to free process_list on application exit
 void free_process_list()
