@@ -804,12 +804,22 @@ void RR_algo()
     alreadyRunning = true;
     // check arrivals first then move just executed process to back of queue
 
+    for (int i = 0; i < total_processes; i++)
+    {
+        // checking if a program should be added into memory
+        if (programList[i].arrivalTime != -1 && clockcycles == programList[i].arrivalTime)
+        {
+            enqueue(readyQueue, atoi(memory[programStartIndex[i]].value), atoi(memory[programStartIndex[i] + 2].value));
+            programList[i].arrivalTime = -1;
+        }
+    }
+
     while (completed < total_processes)
     {
         for (int i = 0; i < total_processes; i++)
         {
             // checking if a program should be added into memory
-            if (programList[i].arrivalTime != -1 && clockcycles == programList[i].arrivalTime)
+            if (programList[i].arrivalTime != -1 && clockcycles + 1 == programList[i].arrivalTime)
             {
                 enqueue(readyQueue, atoi(memory[programStartIndex[i]].value), atoi(memory[programStartIndex[i] + 2].value));
                 programList[i].arrivalTime = -1;
