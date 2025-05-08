@@ -265,6 +265,9 @@ void printVar(int program, const char *varName)
         if (strcmp(memory[i].value, varName) == 0)
         {
             printf("Variable: %s, Value: %s\n", memory[i].value, memory[i].value2);
+            char var_buf[50];
+            snprintf(var_buf, sizeof(var_buf), "Variable: %s, Value: %s\n", memory[i].value, memory[i].value2);
+            printFromToGUI(var_buf);
             return;
         }
     }
