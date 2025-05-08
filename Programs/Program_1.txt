@@ -1,6 +1,6 @@
 semWait userInput
 assign a input
-assign b 10
+assign b input
 semSignal userInput
 semWait userOutput
 printFromTo a b
