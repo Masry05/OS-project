@@ -10,9 +10,11 @@ To simulate a mini operating system’s CPU scheduler with memory and mutex cont
 
 ## 🎥 Demos
 
-▶ [Watch FCFS Simulation] (https://drive.google.com/file/d/1V_28KMTbfBvSoW5xL-juWEG2T-6fuOoD/view?usp=sharing)  
+▶ [Watch FCFS Simulation](https://drive.google.com/file/d/1V_28KMTbfBvSoW5xL-juWEG2T-6fuOoD/view?usp=sharing)
+
 ▶ [Watch Round Robin Simulation](https://drive.google.com/file/d/1beHxHoqdIGuZJvuSPOluBnXJ0PTuK98z/view?usp=sharing)
-▶ [Watch MLFQ Simulation] (https://drive.google.com/file/d/18JnaF3otj3u_v0cKDZ4NiSgBadqma9Xz/view?usp=sharing)
+
+▶ [Watch MLFQ Simulation](https://drive.google.com/file/d/18JnaF3otj3u_v0cKDZ4NiSgBadqma9Xz/view?usp=sharing)
 
 ---
 
@@ -59,6 +61,7 @@ gcc controller.c backend.c gui.c utilities.c -o controller `pkg-config --cflags 
 
 ---
 
-## 📜 License
-
+**## 📜 License
+**
+MIT license
 MIT License
