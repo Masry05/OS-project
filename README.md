@@ -58,10 +58,8 @@ sudo apt install build-essential libgtk-3-dev pkg-config
 git clone https://github.com/Masry05/OS-project.git
 gcc controller.c backend.c gui.c utilities.c -o controller `pkg-config --cflags --libs gtk+-3.0`
 ./controller
-
+```
 ---
 
-**## 📜 License
-**
-MIT license
+## 📜 License
 MIT License
